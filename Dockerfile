@@ -7,4 +7,4 @@ RUN apk add --update \
     netcat-openbsd \
     && rm -rf /var/cache/apk/*
 
-CMD nc -l -p 80
+CMD nc -l -p 88
