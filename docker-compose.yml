@@ -9,6 +9,7 @@ version: "3"
 services:
   kademlia-nodes:
     build: .
+    image: kadlab:latest
     stdin_open: true
     tty: true
     deploy:

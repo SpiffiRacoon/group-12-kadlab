@@ -1,10 +1,13 @@
-FROM alpine:latest
+FROM golang:1.23-alpine
 
-RUN apk add --update \
-    bash \
-    curl \
-    iputils-ping \
-    netcat-openbsd \
-    && rm -rf /var/cache/apk/*
+WORKDIR /kademlia-app
 
-CMD nc -l -p 88
+COPY go.mod .
+COPY main.go ./
+COPY kademlia/*.go ./kademlia/
+
+RUN go mod download
+
+RUN go build -o main .
+
+CMD ["./main"]
