@@ -3,15 +3,36 @@
 package main
 
 import (
-	"d7024e/kademlia"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"strings"
+	"time"
 )
 
+func docker_health_check(w http.ResponseWriter, req *http.Request) {
+	io.WriteString(w, "I'm healthy!")
+}
+
 func main() {
+	IS_BOOTSTRAP_STR := os.Getenv("IS_BOOTSTRAP")
+	isBootstrap := strings.ToLower(IS_BOOTSTRAP_STR) == "true"
 	fmt.Println("Pretending to run the kademlia app...")
-	// Using stuff from the kademlia package here. Something like...
-	id := kademlia.NewKademliaID("FFFFFFFF00000000000000000000000000000000")
-	contact := kademlia.NewContact(id, "localhost:8000")
-	fmt.Println(contact.String())
-	fmt.Printf("%v\n", contact)
+
+	if isBootstrap {
+		http.HandleFunc("/health", docker_health_check)
+		go http.ListenAndServe("127.0.0.1:80", nil)
+	}
+
+	for {
+		time.Sleep(time.Second * 1)
+	}
+
+	//fmt.Println("Pretending to run the kademlia app...")
+	//// Using stuff from the kademlia package here. Something like...
+	//id := kademlia.NewKademliaID("FFFFFFFF00000000000000000000000000000000")
+	//contact := kademlia.NewContact(id, "localhost:8000")
+	//fmt.Println(contact.String())
+	//fmt.Printf("%v\n", contact)
 }

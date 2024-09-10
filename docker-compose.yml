@@ -7,14 +7,13 @@
 
 version: "3"
 services:
-  kademlia-nodes:
-    build: .
-    image: kadlab:latest
+  kademliaNodes:
+    image: kadlab:latest # Make sure your Docker image has this name.
     stdin_open: true
     tty: true
     deploy:
       mode: replicated
-      replicas: 50
+      replicas: 50  
       resources:
         limits:
           cpus: "0.1"
@@ -24,10 +23,46 @@ services:
         delay: 5s
         max_attempts: 3
         window: 10s
-    #    ports:
-    #      - "4000:80"
+    external_links:
+      - bootstrapNode:bootstrapNode
+    environment:
+      - BOOSTRAP_NODE_HOSTNAME=bootstrapNode
+      - BOOSTRAP_NODE_PORT=3000
+      - NODE_PORT=3000
+      - IS_BOOTSTRAP=false
+    depends_on:
+      bootstrapNode:
+        condition: service_healthy
     networks:
       - kademlia_network
 
+  bootstrapNode:
+    image: kadlab:latest 
+    stdin_open: true
+    tty: true
+    deploy:
+      mode: replicated
+      replicas: 1 # You typically only need one bootstrap node
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 10s
+    environment:
+      - NODE_PORT=3000
+      - IS_BOOTSTRAP=true
+    networks:
+      - kademlia_network
+    ports:
+      - "127.0.0.1:3000:80"
+    healthcheck:
+      test: curl -f http://127.0.0.1:80/health || exit 1
+      interval: 5s
+      retries: 5
+      start_period: 10s
+      timeout: 10s
+
 networks:
   kademlia_network:
+    driver:
+      bridge
