@@ -3,12 +3,13 @@
 package main
 
 import (
+	"bufio"
+	"d7024e/kademlia"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
-	"strings"
-	"time"
 )
 
 func docker_health_check(w http.ResponseWriter, req *http.Request) {
@@ -16,17 +17,54 @@ func docker_health_check(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	IS_BOOTSTRAP_STR := os.Getenv("IS_BOOTSTRAP")
-	isBootstrap := strings.ToLower(IS_BOOTSTRAP_STR) == "true"
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+	local_NET_IP, err := net.LookupIP(hostname)
+	if err != nil {
+		panic(err)
+	}
+
+	localIP := local_NET_IP[0].String()
+
+	NodePort := os.Getenv("NODE_PORT")
+
+	BOOTSTRAP_HOSTNAME := os.Getenv("BOOSTRAP_NODE_HOSTNAME")
+	IS_BOOTSTRAP := os.Getenv("IS_BOOTSTRAP") == "true"
+
+	var bootstrapIP string
+
+	if !IS_BOOTSTRAP {
+		bootstrap_NET_IP, err := net.LookupIP(BOOTSTRAP_HOSTNAME)
+		if err != nil {
+			panic(err)
+		}
+		bootstrapIP = bootstrap_NET_IP[0].String()
+	}
+
 	fmt.Println("Pretending to run the kademlia app...")
 
-	if isBootstrap {
+	contact := kademlia.NewContact(kademlia.NewRandomKademliaID(), localIP+":"+NodePort)
+	fmt.Println(contact.String())
+	fmt.Println("BootstrapIP: " + bootstrapIP) // TODO: remove
+	// Create kademlia instance here
+
+	if IS_BOOTSTRAP {
 		http.HandleFunc("/health", docker_health_check)
 		go http.ListenAndServe("127.0.0.1:80", nil)
 	}
 
+	scanner := bufio.NewScanner(os.Stdin)
 	for {
-		time.Sleep(time.Second * 1)
+		scanner.Scan()
+		if err := scanner.Err(); err != nil {
+			fmt.Println("Error:", err)
+			os.Exit(1)
+		}
+		input := scanner.Text()
+		fmt.Println("Recived command: " + input) // Replace with cli function call.
 	}
 
 	//fmt.Println("Pretending to run the kademlia app...")
