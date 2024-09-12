@@ -41,8 +41,9 @@ func (network *Network) SendPingMessage(contact *Contact) bool{
 	return true
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact) {
+func (network *Network) SendFindContactMessage(contact *Contact) ([]Contact, error) {
 	// TODO
+	return nil, nil
 }
 
 func (network *Network) SendFindDataMessage(hash string) {

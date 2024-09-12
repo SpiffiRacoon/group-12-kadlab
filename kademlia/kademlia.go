@@ -37,17 +37,16 @@ func (kademlia *Kademlia) JoinNetwork() {
 	time.Sleep(2 * time.Second)
 
 	ping := kademlia.Network.SendPingMessage(&kademlia.BootstrapNode)
-	fmt.Println(ping)
+	if !ping {
+		fmt.Println("Bootstrap node not responding")
+		return
+	}	
 
 	// TODO
 	// check if bootstrap node is alive
 	// send ping message to bootstrap node
-	// wait for response
-	// if no response, retry
 	// if response, add bootstrap node to routing table
 	// send find contact message to bootstrap node
-	// wait for response
-	// if no response, retry
 	// if response, add contacts to routing table
 
 }
