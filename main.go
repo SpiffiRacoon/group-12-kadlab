@@ -49,12 +49,20 @@ func main() {
 	contact := kademlia.NewContact(kademlia.NewRandomKademliaID(), localIP+":"+NodePort)
 	fmt.Println(contact.String())
 	fmt.Println("BootstrapIP: " + bootstrapIP) // TODO: remove
-	// Create kademlia instance here
+	
+	node := kademlia.NewKademlia(contact, IS_BOOTSTRAP)
 
 	if IS_BOOTSTRAP {
 		http.HandleFunc("/health", docker_health_check)
 		go http.ListenAndServe("127.0.0.1:80", nil)
 	}
+
+	bootsrapNode := kademlia.NewContact(
+		kademlia.NewKademliaID("FFFFFFFF00000000000000000000000000000000"), 
+		bootstrapIP+":3000")
+	
+	node.BootstrapNode = bootsrapNode
+	go node.Start()
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
