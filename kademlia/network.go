@@ -1,5 +1,10 @@
 package kademlia
 
+import (
+	"fmt"
+	"net"
+)
+
 type Network struct {
 	RoutingTable RoutingTable
 	Me 	   Contact
@@ -7,7 +12,7 @@ type Network struct {
 
 type Message struct {
 	MsgType string
-	Body   string
+	Content   string
 	Sender Contact
 }
 
@@ -23,9 +28,17 @@ func (network *Network) Listen(ip string, port int) error{
 	return nil
 }
 
-func (network *Network) SendPingMessage(contact *Contact) Message{
-	// TODO
-	return Message{"test", "test", *contact}
+func (network *Network) SendPingMessage(contact *Contact) bool{
+	//timeout := time.Duration(1 * time.Second)
+	conn, err := net.Dial("udp", contact.Address)
+	if err != nil {
+		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
+		return false
+	} else {
+		fmt.Printf("%s %s %s\n", contact.ID, "responding on port:", contact.Address)
+	}
+	defer conn.Close()
+	return true
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact) {
