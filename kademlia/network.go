@@ -7,15 +7,15 @@ import (
 	"time"
 )
 
-type Network struct {
-	RoutingTable RoutingTable
-	Me 	   Contact
-}
-
 type Message struct {
 	MsgType string
 	Content   string
 	Sender Contact
+}
+
+type Network struct {
+	RoutingTable RoutingTable
+	Me 	   Contact
 }
 
 func NewNetwork(me Contact) *Network {
@@ -45,9 +45,16 @@ func (network *Network) Listen(ip string, port int) error{
 			fmt.Println("Error reading from UDP connection")
 			return err
 		}
-		fmt.Println("Received ", string(buffer[:byteNum]), " from ", rAddr)
+		response, err := network.HandleMessage(buffer[:byteNum], rAddr)
+		if err != nil {
+			fmt.Println("Error when handling Message:", err)
+			continue
+		}
+		conn.WriteToUDP(response, rAddr)
 	}
 }
+
+
 
 func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, error){
 	conn, err := net.Dial("udp", contact.Address)
@@ -63,7 +70,7 @@ func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, erro
 		return nil, err
 	}
 
-	deadline := time.Now().Add(5 * time.Second)
+	deadline := time.Now().Add(15 * time.Second)
 	conn.SetDeadline(deadline)
 
 	response := make([]byte, 1024)
@@ -77,16 +84,26 @@ func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, erro
 	return response[:byteNum], err
 }
 
-func (network *Network) SendPingMessage(contact *Contact) bool{
-	conn, err := net.Dial("udp", contact.Address)
+func (network *Network) SendPingMessage(contact *Contact) bool {
+	msg := Message{
+		MsgType: "PING",
+		Content: "PING",
+		Sender: *contact,
+	}
+	responseMsg, err := network.SendMessage(msg, contact)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
 		return false
 	} else {
-		fmt.Printf("%s %s %s\n", contact.ID, "responding on port:", contact.Address)
+		var msg Message
+		err := json.Unmarshal(responseMsg, &msg)
+		if err != nil {
+			fmt.Println("Error unmarshalling message")
+			return false
+		}
+		fmt.Printf("%s %s %s %s %s\n", contact.ID, "responding on port:", contact.Address, "with ", msg.Content)
+		return true
 	}
-	defer conn.Close()
-	return true
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact) ([]Contact, error) {
