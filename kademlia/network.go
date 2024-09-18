@@ -1,8 +1,10 @@
 package kademlia
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
+	"time"
 )
 
 type Network struct {
@@ -24,12 +26,58 @@ func NewNetwork(me Contact) *Network {
 }
 
 func (network *Network) Listen(ip string, port int) error{
-	// TODO
-	return nil
+	lAddr := net.UDPAddr{
+		Port: port,
+		IP: net.ParseIP(ip),
+	}
+	conn, err := net.ListenUDP("udp", &lAddr)
+	if err != nil {
+		fmt.Println("Error listening on ", ip, ":", port)
+		return err
+	}
+	defer conn.Close()
+	fmt.Println("Listening on ", ip, ":", port)
+
+	for {
+		buffer := make([]byte, 1024)
+		byteNum, rAddr, err := conn.ReadFromUDP(buffer)
+		if err != nil {
+			fmt.Println("Error reading from UDP connection")
+			return err
+		}
+		fmt.Println("Received ", string(buffer[:byteNum]), " from ", rAddr)
+	}
+}
+
+func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, error){
+	conn, err := net.Dial("udp", contact.Address)
+	if err != nil {
+		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
+		return nil, err
+	}
+	data, _ := json.Marshal(msg)
+	_, err = conn.Write(data)
+
+	if err != nil {
+		fmt.Printf("%s %s %s\n", contact.ID, "sent error while writing", err.Error())
+		return nil, err
+	}
+
+	deadline := time.Now().Add(5 * time.Second)
+	conn.SetDeadline(deadline)
+
+	response := make([]byte, 1024)
+	byteNum, err := conn.Read(response)
+	if err != nil {
+		fmt.Printf("%s %s %s\n", contact.ID, "sent error while reading", err.Error())
+		return nil, err
+	}
+	
+	defer conn.Close()
+	return response[:byteNum], err
 }
 
 func (network *Network) SendPingMessage(contact *Contact) bool{
-	//timeout := time.Duration(1 * time.Second)
 	conn, err := net.Dial("udp", contact.Address)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
