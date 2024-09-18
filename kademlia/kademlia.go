@@ -40,6 +40,16 @@ func (kademlia *Kademlia) JoinNetwork() {
 	if !ping {
 		fmt.Println("Bootstrap node not responding")
 		return
+	}
+
+	contacts, err := kademlia.Network.SendFindContactMessage(&kademlia.BootstrapNode)
+	if err != nil {
+		fmt.Println("Error finding contacts")
+		return
+	}
+	
+	for _, contact := range contacts {
+		kademlia.Network.RoutingTable.AddContact(contact)
 	}	
 
 	// TODO
