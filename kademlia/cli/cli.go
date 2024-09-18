@@ -10,6 +10,7 @@ import (
 func Kcli(input string, node *kademlia.Kademlia) {
 	trimmedinput := strings.TrimSpace(input)
 	commandNdata := strings.Fields(trimmedinput)
+
 	if len(commandNdata) == 0 {
 		fmt.Println("No command given.")
 	} else {
@@ -20,15 +21,15 @@ func Kcli(input string, node *kademlia.Kademlia) {
 			if len(commandNdata) == 2 {
 				node.Store([]byte(commandNdata[1]))
 			} else {
-				fmt.Println("This command needs one argument")
+				fmt.Println("This command needs one additional argument")
 			}
-			//	case "get":
-			//		if len(commandNdata) == 2 {
-			//			recvData := node.LookupData(commandNdata[1])
-			//			print(recvData)
-			//		} else {
-			//			fmt.Println("wrong amount of arguments")
-			//		}
+		case "get":
+			if len(commandNdata) == 2 {
+				recvData := node.LookupData(commandNdata[1])
+				print(recvData)
+			} else {
+				fmt.Println("This comman needs one additional arguments")
+			}
 		case "exit":
 			fmt.Println("shutting down node...")
 			os.Exit(0)
