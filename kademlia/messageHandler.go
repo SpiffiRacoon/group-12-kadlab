@@ -28,6 +28,14 @@ func (network *Network) HandleMessage (rawMsg []byte, recieverAddr *net.UDPAddr)
 		fmt.Println("Received STORE from ", msg.Sender)
 	case "FIND_CONTACT":
 		fmt.Println("Received FIND_CONTACT from ", msg.Sender)
+		target := NewKademliaID(msg.Content)
+		contacts := network.HandleFindContactMessage(target, 3)
+		contactsBytes, err := json.Marshal(contacts)
+		if err != nil {
+			fmt.Println("Error marshalling contacts")
+			return nil, err
+		}
+		return contactsBytes, nil	
 	case "FIND_VALUE":
 		fmt.Println("Received FIND_VALUE from ", msg.Sender)
 	default:
