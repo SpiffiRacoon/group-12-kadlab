@@ -9,13 +9,13 @@ import (
 
 type Message struct {
 	MsgType string
-	Content   string
-	Sender Contact
+	Content string
+	Sender  Contact
 }
 
 type Network struct {
 	RoutingTable RoutingTable
-	Me 	   Contact
+	Me           Contact
 }
 
 func NewNetwork(me Contact) *Network {
@@ -25,10 +25,10 @@ func NewNetwork(me Contact) *Network {
 	return network
 }
 
-func (network *Network) Listen(ip string, port int) error{
+func (network *Network) Listen(ip string, port int) error {
 	lAddr := net.UDPAddr{
 		Port: port,
-		IP: net.ParseIP(ip),
+		IP:   net.ParseIP(ip),
 	}
 	conn, err := net.ListenUDP("udp", &lAddr)
 	if err != nil {
@@ -54,9 +54,7 @@ func (network *Network) Listen(ip string, port int) error{
 	}
 }
 
-
-
-func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, error){
+func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, error) {
 	conn, err := net.Dial("udp", contact.Address)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
@@ -79,7 +77,7 @@ func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, erro
 		fmt.Printf("%s %s %s\n", contact.ID, "sent error while reading", err.Error())
 		return nil, err
 	}
-	
+
 	defer conn.Close()
 	return response[:byteNum], err
 }
@@ -88,7 +86,7 @@ func (network *Network) SendPingMessage(contact *Contact) bool {
 	msg := Message{
 		MsgType: "PING",
 		Content: "PING",
-		Sender: *contact,
+		Sender:  *contact,
 	}
 	responseMsg, err := network.SendMessage(msg, contact)
 	if err != nil {
@@ -115,6 +113,29 @@ func (network *Network) SendFindDataMessage(hash string) {
 	// TODO
 }
 
-func (network *Network) SendStoreMessage(data []byte) {
-	// TODO
+func (network *Network) SendStoreMessage(data []byte, key string, contact *Contact) bool { //förslag, använd error istället för bools
+
+	msg := Message{
+		MsgType: "STORE",
+		//Content: data + ";" + key, //TODO, lös vad man ska göra för att de ska lagras i content ihop
+		Sender: *contact,
+	}
+	responseMsg, err := network.SendMessage(msg, contact)
+	if err != nil {
+		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
+		return false
+	} else {
+		var storeResponse Message
+		err := json.Unmarshal(responseMsg, &storeResponse)
+		if err != nil {
+			fmt.Println("Error during unmarshalling")
+			return false
+		}
+		if storeResponse.MsgType != "STORED" {
+			fmt.Println("Failed to store")
+			return false
+		}
+		return true
+	}
+
 }
