@@ -11,20 +11,20 @@ type Kademlia struct {
 	Me            Contact
 	BootstrapNode Contact
 	Network       Network
-	isBootstrap   bool
-	dataStorage   map[string][]byte
+	IsBootstrap   bool
+	DataStorage   map[string][]byte
 }
 
 func NewKademlia(me Contact, isBootstrap bool) *Kademlia {
 	kademlia := &Kademlia{}
 	kademlia.Me = me
 	kademlia.Network = *NewNetwork(me)
-	kademlia.isBootstrap = isBootstrap
+	kademlia.IsBootstrap = isBootstrap
 	return kademlia
 }
 
 func (kademlia *Kademlia) Start() {
-	if !kademlia.isBootstrap {
+	if !kademlia.IsBootstrap {
 		go func() {
 			kademlia.JoinNetwork()
 		}()
@@ -85,12 +85,21 @@ func (kademlia *Kademlia) LookupData(hash string) {
 func (kademlia *Kademlia) Store(data []byte) {
 	sha1 := sha1.Sum(data) //hashes the data
 	key := hex.EncodeToString(sha1[:])
-	//contact := kademlia.LookupContact(NewKademliaID((key)))   //TODO implement LookupContact
-	//
-	go kademlia.Network.SendStoreMessage(data, key, &kademlia.BootstrapNode) //TODO implement SendStoreMessage, should send store message to bootstrap node
+	location := NewKademliaID(key)
+	contacts := kademlia.LookupContact(location)
 
+	if len(contacts) <= 0 {
+		fmt.Println("Error, no suitable nodes to store the data could be found")
+	} else {
+		//blank because we do not care about the iteration variable
+		//we basically do a for each contact in contacts
+		for _, contact := range contacts {
+			kademlia.Network.SendStoreMessage(data, key, &contact)
+		}
+		fmt.Println(string(data) + " is now stored in the key: " + key)
+	}
 }
 
 func (kademlia *Kademlia) LocalStorage(data []byte, key string) {
-	//TODO lösa hur key value paret lagras lokalt på en nods dataStorage
+	kademlia.DataStorage[key] = data
 }

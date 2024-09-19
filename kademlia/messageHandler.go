@@ -6,14 +6,14 @@ import (
 	"net"
 )
 
-func (network *Network) HandleMessage (rawMsg []byte, recieverAddr *net.UDPAddr) ([]byte, error){
+func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) ([]byte, error) {
 	var msg Message
 	err := json.Unmarshal(rawMsg, &msg)
 	if err != nil {
 		fmt.Println("Error unmarshalling message")
 		return nil, err
 	}
-	
+
 	switch msg.MsgType {
 	case "PING":
 		fmt.Println("Received PING from ", msg.Sender)
@@ -42,4 +42,12 @@ func (network *Network) HandlePingMessage() Message {
 		Content: "I'm alive",
 	}
 	return pong
+}
+
+func (network *Network) HandleStoreMessage() Message {
+	storedmsg := Message{
+		MsgType: "STORED",
+		Content: "Data stored successfully on node",
+	}
+	return storedmsg
 }

@@ -117,8 +117,8 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 
 	msg := Message{
 		MsgType: "STORE",
-		//Content: data + ";" + key, //TODO, lös vad man ska göra för att de ska lagras i content ihop
-		Sender: *contact,
+		Content: key + ";" + string(data), //Order here can be reversed if needed but should not matter as long as you know the order
+		Sender:  *contact,
 	}
 	responseMsg, err := network.SendMessage(msg, contact)
 	if err != nil {
