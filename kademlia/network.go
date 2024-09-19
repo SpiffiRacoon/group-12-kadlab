@@ -7,15 +7,14 @@ import (
 	"time"
 )
 
+type Network struct {
+	RoutingTable RoutingTable
+	Me 	   Contact
+}
 type Message struct {
 	MsgType string
 	Content   string
 	Sender Contact
-}
-
-type Network struct {
-	RoutingTable RoutingTable
-	Me 	   Contact
 }
 
 func NewNetwork(me Contact) *Network {
@@ -26,11 +25,11 @@ func NewNetwork(me Contact) *Network {
 }
 
 func (network *Network) Listen(ip string, port int) error{
-	lAddr := net.UDPAddr{
+	localAddr := net.UDPAddr{
 		Port: port,
 		IP: net.ParseIP(ip),
 	}
-	conn, err := net.ListenUDP("udp", &lAddr)
+	conn, err := net.ListenUDP("udp", &localAddr)
 	if err != nil {
 		fmt.Println("Error listening on ", ip, ":", port)
 		return err
@@ -40,17 +39,17 @@ func (network *Network) Listen(ip string, port int) error{
 
 	for {
 		buffer := make([]byte, 1024)
-		byteNum, rAddr, err := conn.ReadFromUDP(buffer)
+		byteNum, remoteAddr, err := conn.ReadFromUDP(buffer)
 		if err != nil {
 			fmt.Println("Error reading from UDP connection")
 			return err
 		}
-		response, err := network.HandleMessage(buffer[:byteNum], rAddr)
+		response, err := network.HandleMessage(buffer[:byteNum], remoteAddr)
 		if err != nil {
 			fmt.Println("Error when handling Message:", err)
 			continue
 		}
-		conn.WriteToUDP(response, rAddr)
+		conn.WriteToUDP(response, remoteAddr)
 	}
 }
 
@@ -88,7 +87,7 @@ func (network *Network) SendPingMessage(contact *Contact) bool {
 	msg := Message{
 		MsgType: "PING",
 		Content: "PING",
-		Sender: *contact,
+		Sender: network.Me,
 	}
 	responseMsg, err := network.SendMessage(msg, contact)
 	if err != nil {
@@ -107,8 +106,27 @@ func (network *Network) SendPingMessage(contact *Contact) bool {
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact) ([]Contact, error) {
-	// TODO
-	return nil, nil
+	msg := Message{
+		MsgType: "FIND_CONTACT",
+		Content: contact.ID.String(),
+		Sender: network.Me,
+	}
+
+	contactsByte, err := network.SendMessage(msg, contact)
+	if err != nil {
+		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
+		return nil, err
+	}
+
+	var contacts []Contact
+	err = json.Unmarshal(contactsByte, &contacts)
+	if err != nil {
+		fmt.Println("Error unmarshalling contacts")
+		return nil, err
+	}
+
+	return contacts, nil
+
 }
 
 func (network *Network) SendFindDataMessage(hash string) {

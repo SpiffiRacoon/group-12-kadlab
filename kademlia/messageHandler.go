@@ -26,8 +26,8 @@ func (network *Network) HandleMessage (rawMsg []byte, recieverAddr *net.UDPAddr)
 		return responseBytes, nil
 	case "STORE":
 		fmt.Println("Received STORE from ", msg.Sender)
-	case "FIND_NODE":
-		fmt.Println("Received FIND_NODE from ", msg.Sender)
+	case "FIND_CONTACT":
+		fmt.Println("Received FIND_CONTACT from ", msg.Sender)
 	case "FIND_VALUE":
 		fmt.Println("Received FIND_VALUE from ", msg.Sender)
 	default:
@@ -42,4 +42,9 @@ func (network *Network) HandlePingMessage() Message {
 		Content: "I'm alive",
 	}
 	return pong
+}
+
+func (network *Network) HandleFindContactMessage(target *KademliaID, count int) ([]Contact) {
+	contacts := network.RoutingTable.FindClosestContacts(target, count)
+	return contacts
 }

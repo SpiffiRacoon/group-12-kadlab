@@ -47,7 +47,7 @@ func (kademlia *Kademlia) JoinNetwork() {
 		fmt.Println("Error finding contacts")
 		return
 	}
-	
+
 	for _, contact := range contacts {
 		kademlia.Network.RoutingTable.AddContact(contact)
 	}	

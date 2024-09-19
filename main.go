@@ -58,7 +58,7 @@ func main() {
 	}
 
 	bootsrapNode := kademlia.NewContact(
-		kademlia.NewKademliaID("FFFFFFFF00000000000000000000000000000000"), 
+		kademlia.NewKademliaID("B0075712A9000000000000000000000000000000"), 
 		bootstrapIP+":3000")
 	
 	node.BootstrapNode = bootsrapNode
