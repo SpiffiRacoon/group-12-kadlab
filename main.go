@@ -43,9 +43,7 @@ func main() {
 		}
 		bootstrapIP = bootstrap_NET_IP[0].String()
 	}
-
-	fmt.Println("Pretending to run the kademlia app...")
-
+	
 	contact := kademlia.NewContact(kademlia.NewRandomKademliaID(), localIP+":"+NodePort)
 	fmt.Println(contact.String())
 	fmt.Println("BootstrapIP: " + bootstrapIP) // TODO: remove
