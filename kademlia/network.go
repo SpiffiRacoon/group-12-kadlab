@@ -83,15 +83,16 @@ func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, erro
 	return response[:byteNum], err
 }
 
-func (network *Network) SendPingMessage(contact *Contact) bool {
+func (network *Network) SendPingMessage(target *Contact) bool {
 	msg := Message{
 		MsgType: "PING",
 		Content: "PING",
 		Sender: network.Me,
 	}
-	responseMsg, err := network.SendMessage(msg, contact)
+
+	responseMsg, err := network.SendMessage(msg, target)
 	if err != nil {
-		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
+		fmt.Printf("%s %s %s\n", target.ID, "not responding", err.Error())
 		return false
 	} else {
 		var msg Message
@@ -100,7 +101,7 @@ func (network *Network) SendPingMessage(contact *Contact) bool {
 			fmt.Println("Error unmarshalling message")
 			return false
 		}
-		fmt.Printf("%s %s %s %s %s\n", contact.ID, "responding on port:", contact.Address, "with ", msg.Content)
+		fmt.Printf("%s %s %s %s %s\n", target.ID, "responding on port:", target.Address, "with ", msg.Content)
 		return true
 	}
 }
