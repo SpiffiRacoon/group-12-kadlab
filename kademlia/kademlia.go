@@ -65,22 +65,26 @@ func (kademlia *Kademlia) JoinNetwork() {
 }
 
 // changed target from *Contact to *KademliaID so it can go straight as input to "FindclosestContacts"
-func (kademlia *Kademlia) LookupContact(target *KademliaID) []Contact {
-	//	probedContacts := new([]Contact)                                                           //a list of already visited contacts
-	var closestContacts *[]Contact // this var holds a pointer to a list
-	//	currClosest := NewContact((NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")), "") //Sets the current closest contact as a 160-bit KademliaID of all ones, sets data as empty string
-	//	currClosest.distance = NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")           //distance becomes
-	//
-	//	alphaClosestContacts := kademlia.Network.RoutingTable.FindClosestContacts(target, alpha) //alpha is a system-wide concurrency parameter, such as 3(page 6 of research paper)
-	//	closestContacts = &alphaClosestContacts
-	//	//TODO everything
-
-	return *closestContacts
+func (kademlia *Kademlia) LookupContact(target *KademliaID) {
 }
 
-func (kademlia *Kademlia) LookupData(hash string) {
-	// TODO
+func (kademlia *Kademlia) LookupData(hash string) string{
+	data := kademlia.ExtractData(hash)
+	if data != nil {
+		return string(data)
+	}
+	location := NewKademliaID(hash)
+	contacts := kademlia.Network.RoutingTable.FindClosestContacts(location, 5)
+	for _, contact := range contacts {
+		searches := kademlia.Network.SendFindDataMessage(hash, &contact)
+		if(searches) 
+	}
 }
+
+func (kademlia *Kademlia) ExtractData(hash string) (data []byte){
+	res := kademlia.DataStorage[hash]
+	return res
+} 
 
 func (kademlia *Kademlia) Store(data []byte) {
 	sha1 := sha1.Sum(data) //hashes the data

@@ -11,6 +11,7 @@ type Message struct {
 	MsgType string
 	Content string
 	Sender  Contact
+	Target  Contact
 }
 
 type Network struct {
@@ -86,7 +87,8 @@ func (network *Network) SendPingMessage(contact *Contact) bool {
 	msg := Message{
 		MsgType: "PING",
 		Content: "PING",
-		Sender:  *contact,
+		Sender:  network.RoutingTable.me,
+		Target:  *contact,
 	}
 	responseMsg, err := network.SendMessage(msg, contact)
 	if err != nil {
@@ -109,8 +111,26 @@ func (network *Network) SendFindContactMessage(contact *Contact) ([]Contact, err
 	return nil, nil
 }
 
-func (network *Network) SendFindDataMessage(hash string) {
-	// TODO
+func (network *Network) SendFindDataMessage(hash string, contact *Contact) (string, bool) {
+	msg := Message{
+		MsgType: "FIND",
+		Content: hash,
+		Sender:  network.RoutingTable.me,
+		Target:  *contact,
+	}
+	response, err := network.SendMessage(msg, contact)
+	if err != nil {
+		return ("Failed to contact target node."), false
+	}
+	var dataResponse string
+	err = json.Unmarshal(response, &dataResponse)
+	if err != nil {
+		return "Error during unmarshalling", false
+	} else if dataResponse == "" {
+		return "Data not found", false
+	} else {
+		return dataResponse, true
+	}
 }
 
 func (network *Network) SendStoreMessage(data []byte, key string, contact *Contact) bool { //förslag, använd error istället för bools
@@ -118,7 +138,8 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 	msg := Message{
 		MsgType: "STORE",
 		Content: key + ";" + string(data), //Order here can be reversed if needed but should not matter as long as you know the order
-		Sender:  *contact,
+		Sender:  network.RoutingTable.me,
+		Target:  *contact,
 	}
 	responseMsg, err := network.SendMessage(msg, contact)
 	if err != nil {
