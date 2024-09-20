@@ -105,10 +105,10 @@ func (network *Network) SendPingMessage(contact *Contact) bool {
 	}
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact) ([]Contact, error) {
+func (network *Network) SendFindContactMessage(contact *Contact, targetID *KademliaID) ([]Contact, error) {
 	msg := Message{
 		MsgType: "FIND_CONTACT",
-		Content: contact.ID.String(),
+		Content: targetID.String(),
 		Sender: network.Me,
 	}
 
