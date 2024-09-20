@@ -26,7 +26,7 @@ func NewKademlia(me Contact, isBootstrap bool) *Kademlia {
 func (kademlia *Kademlia) Start() {
 	if !kademlia.IsBootstrap {
 		go func() {
-			kademlia.JoinNetwork()
+			kademlia.JoinNetwork(&kademlia.BootstrapNode)
 		}()
 	}
 	err := kademlia.Network.Listen("0.0.0.0", 3000)
@@ -35,17 +35,13 @@ func (kademlia *Kademlia) Start() {
 	}
 }
 
-func (kademlia *Kademlia) JoinNetwork() {
+func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 	fmt.Println("Joining network...")
 	time.Sleep(2 * time.Second)
 
-	ping := kademlia.Network.SendPingMessage(&kademlia.BootstrapNode)
-	if !ping {
-		fmt.Println("Bootstrap node not responding")
-		return
-	}
-
-	contacts, err := kademlia.Network.SendFindContactMessage(&kademlia.BootstrapNode)
+	kademlia.Network.RoutingTable.AddContact(*knownNode)
+	kademlia.Network.SendJoinMessage(knownNode)
+	contacts, err := kademlia.LookupContact(&kademlia.Me)
 	if err != nil {
 		fmt.Println("Error finding contacts")
 		return
@@ -55,18 +51,81 @@ func (kademlia *Kademlia) JoinNetwork() {
 		kademlia.Network.RoutingTable.AddContact(contact)
 	}
 
-	// TODO
-	// check if bootstrap node is alive
-	// send ping message to bootstrap node
-	// if response, add bootstrap node to routing table
-	// send find contact message to bootstrap node
-	// if response, add contacts to routing table
-
+	fmt.Println("Network joined.")
+	kademlia.PopulateNetwork()
+	fmt.Printf("kademlia.Network.RoutingTable.buckets: %v\n", kademlia.Network.RoutingTable.buckets)
 }
 
-// changed target from *Contact to *KademliaID so it can go straight as input to "FindclosestContacts"
-func (kademlia *Kademlia) LookupContact(target *KademliaID) (contact []Contact) {
-	return
+func (kademlia *Kademlia) PopulateNetwork() {
+	fmt.Println("Populating the network...")
+
+	// Define the number of random IDs to search for and populate the network with
+	numLookups := 10
+
+	for i := 0; i < numLookups; i++ {
+		randomID := NewRandomKademliaID()
+
+		contacts, err := kademlia.LookupContact(&Contact{ID: randomID})
+		if err != nil {
+			fmt.Println("Error finding contacts during network population")
+			continue
+		}
+
+		for _, contact := range contacts {
+			kademlia.Network.RoutingTable.AddContact(contact)
+		}
+	}
+
+	fmt.Println("Network population complete.")
+}
+
+func (kademlia *Kademlia) LookupContact(target *Contact) ([]Contact, error) {
+	k := 3
+	closestNodes := kademlia.Network.RoutingTable.FindClosestContacts(target.ID, k)
+
+	queriedNodes := []Contact{}
+
+	for _, node := range closestNodes {
+		if containsContact(queriedNodes, node) {
+			break
+		}
+
+		queriedNodes = append(queriedNodes, node)
+
+		newNodes, err := kademlia.Network.SendFindContactMessage(&node, target.ID)
+		if err != nil {
+			// If the node is not responding, remove it from our closestNodes list
+			closestNodes = removeFromList(closestNodes, node)
+			continue
+		}
+
+		closestNodes = append(closestNodes, newNodes...)
+
+		if len(closestNodes) > k {
+			closestNodes = closestNodes[:k]
+		}
+	}
+
+	return closestNodes, nil
+}
+
+func containsContact(list []Contact, current Contact) bool {
+	for _, i := range list {
+		if i.ID == current.ID {
+			return true
+		}
+	}
+	return false
+}
+
+func removeFromList(list []Contact, current Contact) []Contact {
+	for i, contact := range list {
+		if contact.ID == current.ID {
+			list = append(list[:i], list[i+1:]...)
+			break
+		}
+	}
+	return list
 }
 
 func (kademlia *Kademlia) LookupData(hash string) string {
