@@ -45,32 +45,42 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 		return
 	}
 
-	/*
-	ping := kademlia.Network.SendPingMessage(&kademlia.BootstrapNode)
-	if !ping {
-		fmt.Println("Bootstrap node not responding")
-		return
-	}
-
-	contacts, err := kademlia.Network.SendFindContactMessage(&kademlia.BootstrapNode)
-	if err != nil {
-		fmt.Println("Error finding contacts")
-		return
-	}
-*/
 	for _, contact := range contacts {
 		kademlia.Network.RoutingTable.AddContact(contact)
-	}	
-
-	// TODO
-	// check if bootstrap node is alive
-	// send ping message to bootstrap node
-	// if response, add bootstrap node to routing table
-	// send find contact message to bootstrap node
-	// if response, add contacts to routing table
-
+		//kademlia.Network.SendJoinMessage(&contact)
+	}
+	
+	fmt.Println("Network joined.")
+	kademlia.PopulateNetwork()
+	fmt.Println("Network populated.")
+	fmt.Printf("kademlia.Network.RoutingTable.buckets: %v\n", kademlia.Network.RoutingTable.buckets)
 }
 
+func (kademlia *Kademlia) PopulateNetwork() {
+    fmt.Println("Populating the network...")
+
+    // Define the number of random IDs to search for and populate the network with
+    numLookups := 5 // You can adjust this based on how much you want to populate the network
+
+    for i := 0; i < numLookups; i++ {
+        // Generate a random node ID for network discovery
+        randomID := NewRandomKademliaID()
+
+        // Perform a lookup for the random node ID
+        contacts, err := kademlia.LookupContact(&Contact{ID: randomID})
+        if err != nil {
+            fmt.Println("Error finding contacts during network population")
+            continue
+        }
+
+        // Add the discovered contacts to the routing table
+        for _, contact := range contacts {
+            kademlia.Network.RoutingTable.AddContact(contact)
+        }
+    }
+
+    fmt.Println("Network population complete.")
+}
 
 func (kademlia *Kademlia) LookupContact(target *Contact) ([]Contact, error) {
 	k := 3
@@ -111,59 +121,6 @@ func (kademlia *Kademlia) LookupContact(target *Contact) ([]Contact, error) {
 	fmt.Println("Found ", len(closestNodes), " closest nodes")
 	fmt.Println("Nodes: ", closestNodes)
 	return closestNodes, nil
-
-
-	/*
-	targetID := target.ID
-	alpha := 3
-	checkedContacts := new([]Contact)
-	var closestList *[]Contact
-	alphaclosestList := kademlia.Network.RoutingTable.FindClosestContacts(targetID, alpha)
-	closestList = &alphaclosestList
-
-	currentClosest := NewContact(NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"), "")
-	currentClosest.distance = NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
-
-	for {
-		updateClosest := false
-		numChecked := 0
-		for i := 0; i < len(*closestList) && numChecked < alpha; i++ {
-			if containsContact(*checkedContacts, (*closestList)[i]) {
-				continue
-			} else {
-				templist, err := kademlia.Network.SendFindContactMessage(&(*closestList)[i], *targetID)
-				if err != nil {
-					//kademlia.Network.RoutingTable.RemoveContact((*closestList)[i])
-					*closestList = removeFromList(*closestList, (*closestList)[i])
-					continue
-				} else {
-					*checkedContacts = append(*checkedContacts, (*closestList)[i])
-					bucket := kademlia.Network.RoutingTable.buckets[kademlia.Network.RoutingTable.getBucketIndex((*closestList)[i].ID)]
-					// if there is space in the bucket add the node
-					kademlia.updateBucket(*bucket, (*closestList)[i])
-					// append contacts to shortlist if err is none
-					for i := 0; i < len(templist); i++ {
-						templist[i].CalcDistance(targetID)
-					}
-					*closestList, currentClosest, updateClosest = kademlia.addUniqueContacts(templist, *closestList, currentClosest, updateClosest)
-					numChecked++
-				}
-
-			}
-		}
-		if !updateClosest || len(*checkedContacts) >= 20 {
-			break
-		}
-	}
-
-	return *closestList, nil
-	*/
-	/*
-	
-	contacts := kademlia.Network.RoutingTable.FindClosestContacts(target.ID, 3)
-	fmt.Println("Num found contacts: ", len(contacts))
-	return contacts, nil
-	*/
 }
 
 func containsContact(list []Contact, current Contact) bool {
