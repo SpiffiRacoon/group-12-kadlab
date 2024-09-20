@@ -18,11 +18,6 @@ type Message struct {
 	Target  Contact
 }
 
-type Network struct {
-	RoutingTable RoutingTable
-	Me           Contact
-}
-
 func NewNetwork(me Contact) *Network {
 	network := &Network{}
 	network.Me = me

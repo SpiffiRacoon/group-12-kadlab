@@ -41,7 +41,7 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 
 	kademlia.Network.RoutingTable.AddContact(*knownNode)
 	kademlia.Network.SendJoinMessage(knownNode)
-	contacts, err := kademlia.LookupContact(&kademlia.Me)
+	contacts, err := kademlia.LookupContact(kademlia.Me.ID)
 	if err != nil {
 		fmt.Println("Error finding contacts")
 		return
@@ -65,7 +65,7 @@ func (kademlia *Kademlia) PopulateNetwork() {
 	for i := 0; i < numLookups; i++ {
 		randomID := NewRandomKademliaID()
 
-		contacts, err := kademlia.LookupContact(&Contact{ID: randomID})
+		contacts, err := kademlia.LookupContact(randomID)
 		if err != nil {
 			fmt.Println("Error finding contacts during network population")
 			continue
@@ -79,9 +79,9 @@ func (kademlia *Kademlia) PopulateNetwork() {
 	fmt.Println("Network population complete.")
 }
 
-func (kademlia *Kademlia) LookupContact(target *Contact) ([]Contact, error) {
+func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
 	k := 3
-	closestNodes := kademlia.Network.RoutingTable.FindClosestContacts(target.ID, k)
+	closestNodes := kademlia.Network.RoutingTable.FindClosestContacts(target, k)
 
 	queriedNodes := []Contact{}
 
@@ -92,7 +92,7 @@ func (kademlia *Kademlia) LookupContact(target *Contact) ([]Contact, error) {
 
 		queriedNodes = append(queriedNodes, node)
 
-		newNodes, err := kademlia.Network.SendFindContactMessage(&node, target.ID)
+		newNodes, err := kademlia.Network.SendFindContactMessage(&node, target)
 		if err != nil {
 			// If the node is not responding, remove it from our closestNodes list
 			closestNodes = removeFromList(closestNodes, node)
@@ -153,7 +153,7 @@ func (kademlia *Kademlia) Store(data []byte) {
 	sha1 := sha1.Sum(data) //hashes the data
 	key := hex.EncodeToString(sha1[:])
 	location := NewKademliaID(key)
-	contacts := kademlia.LookupContact(location)
+	contacts, _ := kademlia.LookupContact(location)
 
 	if len(contacts) <= 0 {
 		fmt.Println("Error, no suitable nodes to store the data could be found")
