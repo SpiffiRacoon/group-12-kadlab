@@ -105,6 +105,29 @@ func (network *Network) SendPingMessage(contact *Contact) bool {
 	}
 }
 
+func (network *Network) SendJoinMessage(contact *Contact) bool{
+	msg := Message{
+		MsgType: "JOIN",
+		Content: network.Me.ID.String(),
+		Sender: network.Me,
+	}
+
+	responseMsg, err := network.SendMessage(msg, contact)
+	if err != nil {
+		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
+		return false
+	} else {
+		var msg Message
+		err := json.Unmarshal(responseMsg, &msg)
+		if err != nil {
+			fmt.Println("Error unmarshalling message")
+			return false
+		}
+		fmt.Printf("%s %s %s %s %s\n", contact.ID, "responding on port:", contact.Address, "with ", msg.Content)
+		return true
+	}
+}
+
 func (network *Network) SendFindContactMessage(contact *Contact, targetID *KademliaID) ([]Contact, error) {
 	msg := Message{
 		MsgType: "FIND_CONTACT",

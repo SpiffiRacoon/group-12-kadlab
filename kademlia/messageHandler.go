@@ -24,8 +24,15 @@ func (network *Network) HandleMessage (rawMsg []byte, recieverAddr *net.UDPAddr)
 			return nil, err
 		}
 		return responseBytes, nil
-	case "STORE":
-		fmt.Println("Received STORE from ", msg.Sender)
+	case "JOIN":
+		fmt.Println("Received JOIN from ", msg.Sender)
+		response := network.HandleJoinMessage(msg.Sender)	
+		responseBytes, err := json.Marshal(response)
+		if err != nil {
+			fmt.Println("Error marshalling response")
+			return nil, err
+		}
+		return responseBytes, nil		
 	case "FIND_CONTACT":
 		fmt.Println("Received FIND_CONTACT from ", msg.Sender)
 		target := NewKademliaID(msg.Content)
@@ -36,6 +43,8 @@ func (network *Network) HandleMessage (rawMsg []byte, recieverAddr *net.UDPAddr)
 			return nil, err
 		}
 		return contactsBytes, nil	
+	case "STORE":
+		fmt.Println("Received STORE from ", msg.Sender)
 	case "FIND_VALUE":
 		fmt.Println("Received FIND_VALUE from ", msg.Sender)
 	default:
@@ -50,6 +59,15 @@ func (network *Network) HandlePingMessage() Message {
 		Content: "I'm alive",
 	}
 	return pong
+}
+
+func (network *Network) HandleJoinMessage(sender Contact) Message{
+	network.RoutingTable.AddContact(sender)
+	joinResponse := Message{
+		MsgType: "JOIN_RESPONSE",
+		Content: "Welcome to the network",
+	}
+	return joinResponse
 }
 
 func (network *Network) HandleFindContactMessage(target *KademliaID, count int) ([]Contact) {

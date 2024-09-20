@@ -38,6 +38,7 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 	time.Sleep(2 * time.Second)
 
 	kademlia.Network.RoutingTable.AddContact(*knownNode)
+	kademlia.Network.SendJoinMessage(knownNode)
 	contacts, err := kademlia.LookupContact(&kademlia.Me)
 	if err != nil {
 		fmt.Println("Error finding contacts")
