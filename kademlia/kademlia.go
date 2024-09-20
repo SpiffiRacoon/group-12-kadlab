@@ -65,10 +65,11 @@ func (kademlia *Kademlia) JoinNetwork() {
 }
 
 // changed target from *Contact to *KademliaID so it can go straight as input to "FindclosestContacts"
-func (kademlia *Kademlia) LookupContact(target *KademliaID) {
+func (kademlia *Kademlia) LookupContact(target *KademliaID) (contact []Contact) {
+	return
 }
 
-func (kademlia *Kademlia) LookupData(hash string) string{
+func (kademlia *Kademlia) LookupData(hash string) string {
 	data := kademlia.ExtractData(hash)
 	if data != nil {
 		return string(data)
@@ -76,15 +77,18 @@ func (kademlia *Kademlia) LookupData(hash string) string{
 	location := NewKademliaID(hash)
 	contacts := kademlia.Network.RoutingTable.FindClosestContacts(location, 5)
 	for _, contact := range contacts {
-		searches := kademlia.Network.SendFindDataMessage(hash, &contact)
-		if(searches) 
+		searches, found := kademlia.Network.SendFindDataMessage(hash, &contact)
+		if found {
+			return string(kademlia.ExtractData(searches)) //Unclear if this is the correct way, want to extract the data stored in node with kademliaID "contact"
+		}
 	}
+	return "Did not find the data in the closest contacts" //not sure if this is what we want either
 }
 
-func (kademlia *Kademlia) ExtractData(hash string) (data []byte){
+func (kademlia *Kademlia) ExtractData(hash string) (data []byte) {
 	res := kademlia.DataStorage[hash]
 	return res
-} 
+}
 
 func (kademlia *Kademlia) Store(data []byte) {
 	sha1 := sha1.Sum(data) //hashes the data
