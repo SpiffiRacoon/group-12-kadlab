@@ -1,27 +1,30 @@
 package kademlia
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"time"
 )
 
 type Kademlia struct {
-	Me Contact
+	Me            Contact
 	BootstrapNode Contact
-	Network Network
-	isBootstrap bool
+	Network       Network
+	IsBootstrap   bool
+	DataStorage   map[string][]byte
 }
 
 func NewKademlia(me Contact, isBootstrap bool) *Kademlia {
 	kademlia := &Kademlia{}
 	kademlia.Me = me
-	kademlia.Network= *NewNetwork(me)
-	kademlia.isBootstrap = isBootstrap
+	kademlia.Network = *NewNetwork(me)
+	kademlia.IsBootstrap = isBootstrap
 	return kademlia
 }
 
 func (kademlia *Kademlia) Start() {
-	if !kademlia.isBootstrap {
+	if !kademlia.IsBootstrap {
 		go func() {
 			kademlia.JoinNetwork(&kademlia.BootstrapNode)
 		}()
@@ -38,7 +41,7 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 
 	kademlia.Network.RoutingTable.AddContact(*knownNode)
 	kademlia.Network.SendJoinMessage(knownNode)
-	contacts, err := kademlia.LookupContact(&kademlia.Me)
+	contacts, err := kademlia.LookupContact(kademlia.Me.ID)
 	if err != nil {
 		fmt.Println("Error finding contacts")
 		return
@@ -47,41 +50,40 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 	for _, contact := range contacts {
 		kademlia.Network.RoutingTable.AddContact(contact)
 	}
-	
+
 	fmt.Println("Network joined.")
 	kademlia.PopulateNetwork()
 	fmt.Printf("kademlia.Network.RoutingTable.buckets: %v\n", kademlia.Network.RoutingTable.buckets)
 }
 
 func (kademlia *Kademlia) PopulateNetwork() {
-    fmt.Println("Populating the network...")
+	fmt.Println("Populating the network...")
 
-    // Define the number of random IDs to search for and populate the network with
-    numLookups := 10 
+	// Define the number of random IDs to search for and populate the network with
+	numLookups := 10
 
-    for i := 0; i < numLookups; i++ {
-        randomID := NewRandomKademliaID()
+	for i := 0; i < numLookups; i++ {
+		randomID := NewRandomKademliaID()
 
-        contacts, err := kademlia.LookupContact(&Contact{ID: randomID})
-        if err != nil {
-            fmt.Println("Error finding contacts during network population")
-            continue
-        }
+		contacts, err := kademlia.LookupContact(randomID)
+		if err != nil {
+			fmt.Println("Error finding contacts during network population")
+			continue
+		}
 
-        for _, contact := range contacts {
-            kademlia.Network.RoutingTable.AddContact(contact)
-        }
-    }
+		for _, contact := range contacts {
+			kademlia.Network.RoutingTable.AddContact(contact)
+		}
+	}
 
-    fmt.Println("Network population complete.")
+	fmt.Println("Network population complete.")
 }
 
-func (kademlia *Kademlia) LookupContact(target *Contact) ([]Contact, error) {
+func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
 	k := 3
-	closestNodes := kademlia.Network.RoutingTable.FindClosestContacts(target.ID, k)
+	closestNodes := kademlia.Network.RoutingTable.FindClosestContacts(target, k)
 
 	queriedNodes := []Contact{}
-
 
 	for _, node := range closestNodes {
 		if containsContact(queriedNodes, node) {
@@ -90,7 +92,7 @@ func (kademlia *Kademlia) LookupContact(target *Contact) ([]Contact, error) {
 
 		queriedNodes = append(queriedNodes, node)
 
-		newNodes, err := kademlia.Network.SendFindContactMessage(&node, target.ID)
+		newNodes, err := kademlia.Network.SendFindContactMessage(&node, target)
 		if err != nil {
 			// If the node is not responding, remove it from our closestNodes list
 			closestNodes = removeFromList(closestNodes, node)
@@ -126,10 +128,45 @@ func removeFromList(list []Contact, current Contact) []Contact {
 	return list
 }
 
-func (kademlia *Kademlia) LookupData(hash string) {
-	// TODO
+func (kademlia *Kademlia) LookupData(hash string) string {
+	data := kademlia.ExtractData(hash)
+	if data != nil {
+		return string(data)
+	}
+	location := NewKademliaID(hash)
+	contacts := kademlia.Network.RoutingTable.FindClosestContacts(location, 5)
+	for _, contact := range contacts {
+		searches, found := kademlia.Network.SendFindDataMessage(hash, &contact)
+		if found {
+			return string(kademlia.ExtractData(searches)) //Unclear if this is the correct way, want to extract the data stored in node with kademliaID "contact"
+		}
+	}
+	return "Did not find the data in the closest contacts" //not sure if this is what we want either
+}
+
+func (kademlia *Kademlia) ExtractData(hash string) (data []byte) {
+	res := kademlia.DataStorage[hash]
+	return res
 }
 
 func (kademlia *Kademlia) Store(data []byte) {
-	// TODO
+	sha1 := sha1.Sum(data) //hashes the data
+	key := hex.EncodeToString(sha1[:])
+	location := NewKademliaID(key)
+	contacts, _ := kademlia.LookupContact(location)
+
+	if len(contacts) <= 0 {
+		fmt.Println("Error, no suitable nodes to store the data could be found")
+	} else {
+		//blank because we do not care about the iteration variable
+		//we basically do a for each contact in contacts
+		for _, contact := range contacts {
+			kademlia.Network.SendStoreMessage(data, key, &contact)
+		}
+		fmt.Println(string(data) + " is now stored in the key: " + key)
+	}
+}
+
+func (kademlia *Kademlia) LocalStorage(data []byte, key string) {
+	kademlia.DataStorage[key] = data
 }
