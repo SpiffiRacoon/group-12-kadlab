@@ -1,5 +1,7 @@
 package kademlia
 
+import "fmt"
+
 const bucketSize = 20
 
 
@@ -25,6 +27,7 @@ func (routingTable *RoutingTable) AddContact(contact Contact) {
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
 	bucket := routingTable.buckets[bucketIndex]
 	bucket.AddContact(contact)
+	fmt.Println("Added contact: ", contact)
 }
 
 // FindClosestContacts finds the count closest Contacts to the target in the RoutingTable
