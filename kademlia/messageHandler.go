@@ -6,14 +6,14 @@ import (
 	"net"
 )
 
-func (network *Network) HandleMessage (rawMsg []byte, recieverAddr *net.UDPAddr) ([]byte, error){
+func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) ([]byte, error) {
 	var msg Message
 	err := json.Unmarshal(rawMsg, &msg)
 	if err != nil {
 		fmt.Println("Error unmarshalling message")
 		return nil, err
 	}
-	
+
 	switch msg.MsgType {
 	case "PING":
 		fmt.Println("Received PING from ", msg.Sender)
@@ -26,13 +26,13 @@ func (network *Network) HandleMessage (rawMsg []byte, recieverAddr *net.UDPAddr)
 		return responseBytes, nil
 	case "JOIN":
 		fmt.Println("Received JOIN from ", msg.Sender)
-		response := network.HandleJoinMessage(msg.Sender)	
+		response := network.HandleJoinMessage(msg.Sender)
 		responseBytes, err := json.Marshal(response)
 		if err != nil {
 			fmt.Println("Error marshalling response")
 			return nil, err
 		}
-		return responseBytes, nil		
+		return responseBytes, nil
 	case "FIND_CONTACT":
 		fmt.Println("Received FIND_CONTACT from ", msg.Sender)
 		target := NewKademliaID(msg.Content)
@@ -42,7 +42,7 @@ func (network *Network) HandleMessage (rawMsg []byte, recieverAddr *net.UDPAddr)
 			fmt.Println("Error marshalling contacts")
 			return nil, err
 		}
-		return contactsBytes, nil	
+		return contactsBytes, nil
 	case "STORE":
 		fmt.Println("Received STORE from ", msg.Sender)
 	case "FIND_VALUE":
@@ -61,7 +61,7 @@ func (network *Network) HandlePingMessage() Message {
 	return pong
 }
 
-func (network *Network) HandleJoinMessage(sender Contact) Message{
+func (network *Network) HandleJoinMessage(sender Contact) Message {
 	network.RoutingTable.AddContact(sender)
 	joinResponse := Message{
 		MsgType: "JOIN_RESPONSE",
@@ -70,7 +70,15 @@ func (network *Network) HandleJoinMessage(sender Contact) Message{
 	return joinResponse
 }
 
-func (network *Network) HandleFindContactMessage(target *KademliaID, count int) ([]Contact) {
+func (network *Network) HandleFindContactMessage(target *KademliaID, count int) []Contact {
 	contacts := network.RoutingTable.FindClosestContacts(target, count)
 	return contacts
+}
+
+func (network *Network) HandleStoreMessage() Message {
+	storedmsg := Message{
+		MsgType: "STORED",
+		Content: "Data stored successfully on node",
+	}
+	return storedmsg
 }

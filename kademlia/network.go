@@ -9,12 +9,13 @@ import (
 
 type Network struct {
 	RoutingTable RoutingTable
-	Me 	   Contact
+	Me           Contact
 }
 type Message struct {
 	MsgType string
-	Content   string
-	Sender Contact
+	Content string
+	Sender  Contact
+	Target  Contact
 }
 
 func NewNetwork(me Contact) *Network {
@@ -24,10 +25,10 @@ func NewNetwork(me Contact) *Network {
 	return network
 }
 
-func (network *Network) Listen(ip string, port int) error{
+func (network *Network) Listen(ip string, port int) error {
 	localAddr := net.UDPAddr{
 		Port: port,
-		IP: net.ParseIP(ip),
+		IP:   net.ParseIP(ip),
 	}
 	conn, err := net.ListenUDP("udp", &localAddr)
 	if err != nil {
@@ -53,9 +54,7 @@ func (network *Network) Listen(ip string, port int) error{
 	}
 }
 
-
-
-func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, error){
+func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, error) {
 	conn, err := net.Dial("udp", contact.Address)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
@@ -78,7 +77,7 @@ func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, erro
 		fmt.Printf("%s %s %s\n", contact.ID, "sent error while reading", err.Error())
 		return nil, err
 	}
-	
+
 	defer conn.Close()
 	return response[:byteNum], err
 }
@@ -87,7 +86,7 @@ func (network *Network) SendPingMessage(target *Contact) bool {
 	msg := Message{
 		MsgType: "PING",
 		Content: "PING",
-		Sender: network.Me,
+		Sender:  network.Me,
 	}
 
 	responseMsg, err := network.SendMessage(msg, target)
@@ -106,11 +105,11 @@ func (network *Network) SendPingMessage(target *Contact) bool {
 	}
 }
 
-func (network *Network) SendJoinMessage(contact *Contact) bool{
+func (network *Network) SendJoinMessage(contact *Contact) bool {
 	msg := Message{
 		MsgType: "JOIN",
 		Content: network.Me.ID.String(),
-		Sender: network.Me,
+		Sender:  network.Me,
 	}
 
 	responseMsg, err := network.SendMessage(msg, contact)
@@ -133,7 +132,7 @@ func (network *Network) SendFindContactMessage(contact *Contact, targetID *Kadem
 	msg := Message{
 		MsgType: "FIND_CONTACT",
 		Content: targetID.String(),
-		Sender: network.Me,
+		Sender:  network.Me,
 	}
 
 	contactsByte, err := network.SendMessage(msg, contact)
@@ -153,10 +152,52 @@ func (network *Network) SendFindContactMessage(contact *Contact, targetID *Kadem
 
 }
 
-func (network *Network) SendFindDataMessage(hash string) {
-	// TODO
+func (network *Network) SendFindDataMessage(hash string, contact *Contact) (string, bool) {
+	msg := Message{
+		MsgType: "FIND",
+		Content: hash,
+		Sender:  network.RoutingTable.me,
+		Target:  *contact,
+	}
+	response, err := network.SendMessage(msg, contact)
+	if err != nil {
+		return ("Failed to contact target node."), false
+	}
+	var dataResponse string
+	err = json.Unmarshal(response, &dataResponse)
+	if err != nil {
+		return "Error during unmarshalling", false
+	} else if dataResponse == "" {
+		return "Data not found", false
+	} else {
+		return dataResponse, true
+	}
 }
 
-func (network *Network) SendStoreMessage(data []byte) {
-	// TODO
+func (network *Network) SendStoreMessage(data []byte, key string, contact *Contact) bool { //förslag, använd error istället för bools
+
+	msg := Message{
+		MsgType: "STORE",
+		Content: key + ";" + string(data), //Order here can be reversed if needed but should not matter as long as you know the order
+		Sender:  network.RoutingTable.me,
+		Target:  *contact,
+	}
+	responseMsg, err := network.SendMessage(msg, contact)
+	if err != nil {
+		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
+		return false
+	} else {
+		var storeResponse Message
+		err := json.Unmarshal(responseMsg, &storeResponse)
+		if err != nil {
+			fmt.Println("Error during unmarshalling")
+			return false
+		}
+		if storeResponse.MsgType != "STORED" {
+			fmt.Println("Failed to store")
+			return false
+		}
+		return true
+	}
+
 }
