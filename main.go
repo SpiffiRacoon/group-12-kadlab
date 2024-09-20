@@ -45,8 +45,6 @@ func main() {
 		bootstrapIP = bootstrap_NET_IP[0].String()
 	}
 
-	fmt.Println("Pretending to run the kademlia app...")
-
 	contact := kademlia.NewContact(kademlia.NewRandomKademliaID(), localIP+":"+NodePort)
 	fmt.Println(contact.String())
 	fmt.Println("BootstrapIP: " + bootstrapIP) // TODO: remove
@@ -59,7 +57,7 @@ func main() {
 	}
 
 	bootsrapNode := kademlia.NewContact(
-		kademlia.NewKademliaID("FFFFFFFF00000000000000000000000000000000"),
+		kademlia.NewKademliaID("B0075712A9000000000000000000000000000000"),
 		bootstrapIP+":3000")
 
 	node.BootstrapNode = bootsrapNode
@@ -76,10 +74,4 @@ func main() {
 		cli.Kcli(input, node) // Replace with cli function call.
 	}
 
-	//fmt.Println("Pretending to run the kademlia app...")
-	//// Using stuff from the kademlia package here. Something like...
-	//id := kademlia.NewKademliaID("FFFFFFFF00000000000000000000000000000000")
-	//contact := kademlia.NewContact(id, "localhost:8000")
-	//fmt.Println(contact.String())
-	//fmt.Printf("%v\n", contact)
 }
