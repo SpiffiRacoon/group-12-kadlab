@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 )
@@ -16,7 +17,6 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 
 	switch msg.MsgType {
 	case "PING":
-		fmt.Println("Received PING from ", msg.Sender)
 		response := network.handlePingMessage()
 		responseBytes, err := json.Marshal(response)
 		if err != nil {
@@ -25,7 +25,6 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 		}
 		return responseBytes, nil
 	case "JOIN":
-		fmt.Println("Received JOIN from ", msg.Sender)
 		response := network.handleJoinMessage(msg.Sender)
 		responseBytes, err := json.Marshal(response)
 		if err != nil {
@@ -34,7 +33,6 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 		}
 		return responseBytes, nil
 	case "FIND_CONTACT":
-		fmt.Println("Received FIND_CONTACT from ", msg.Sender)
 		target := NewKademliaID(msg.Content)
 		contacts := network.handleFindContactMessage(target, 3)
 		contactsBytes, err := json.Marshal(contacts)
@@ -44,11 +42,12 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 		}
 		return contactsBytes, nil
 	case "STORE":
-		fmt.Println("Received STORE from ", msg.Sender)
+		fmt.Println("Received STORE from ", msg.Sender, "NOT IMPLEMENTED")
+		network.handleStoreMessage()
 	case "FIND_VALUE":
-		fmt.Println("Received FIND_VALUE from ", msg.Sender)
+		fmt.Println("Received FIND_VALUE from ", msg.Sender, "NOT IMPLEMENTED")
 	default:
-		fmt.Println("Unknown message type: " + msg.MsgType)
+		return nil, errors.New("Unknown message type: " + msg.MsgType)
 	}
 	return nil, nil
 }
@@ -57,6 +56,7 @@ func (network *Network) handlePingMessage() Message {
 	pong := Message{
 		MsgType: "PONG",
 		Content: "I'm alive",
+		Sender:  network.Me,
 	}
 	return pong
 }

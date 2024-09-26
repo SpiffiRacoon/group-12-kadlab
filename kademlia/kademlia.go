@@ -106,6 +106,8 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
 		}
 	}
 
+	//TODO: sort the contacts?
+
 	return closestNodes, nil
 }
 
