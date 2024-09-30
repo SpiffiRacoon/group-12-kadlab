@@ -1,6 +1,8 @@
 package kademlia
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -8,6 +10,7 @@ import (
 )
 
 type Network struct {
+	kademlia     *Kademlia
 	RoutingTable RoutingTable
 	Me           Contact
 }
@@ -15,7 +18,6 @@ type Message struct {
 	MsgType string
 	Content string
 	Sender  Contact
-	Target  Contact
 }
 
 func NewNetwork(me Contact) *Network {
@@ -152,25 +154,30 @@ func (network *Network) SendFindContactMessage(contact *Contact, targetID *Kadem
 
 }
 
-func (network *Network) SendFindDataMessage(hash string, contact *Contact) (string, bool) {
+func (network *Network) SendFindDataMessage(hash string, contact *Contact) (string, []Contact) {
 	msg := Message{
-		MsgType: "FIND",
+		MsgType: "FIND_VALUE",
 		Content: hash,
 		Sender:  network.RoutingTable.me,
-		Target:  *contact,
 	}
 	response, err := network.SendMessage(msg, contact)
 	if err != nil {
-		return ("Failed to contact target node."), false
+		fmt.Println("Error during SendMessage")
+		return "", nil
 	}
+	var suggestedContacts []Contact
 	var dataResponse string
 	err = json.Unmarshal(response, &dataResponse)
 	if err != nil {
-		return "Error during unmarshalling", false
+		fmt.Println("Error during unmarshalling")
+		return "", nil
 	} else if dataResponse == "" {
-		return "Data not found", false
+		//Case: if no data is found it acts like a FIND_NODE-response
+		json.Unmarshal(response, &suggestedContacts)
+		return "", suggestedContacts
 	} else {
-		return dataResponse, true
+		//Case: Corresponding value is present, return data
+		return dataResponse, nil
 	}
 }
 
@@ -180,7 +187,6 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 		MsgType: "STORE",
 		Content: key + ";" + string(data), //Order here can be reversed if needed but should not matter as long as you know the order
 		Sender:  network.RoutingTable.me,
-		Target:  *contact,
 	}
 	responseMsg, err := network.SendMessage(msg, contact)
 	if err != nil {
@@ -200,4 +206,12 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 		return true
 	}
 
+}
+
+func (network *Network) storeAtOtherNode(data []byte, target *Contact) bool {
+	sha1 := sha1.Sum(data) //hashes the data
+	key := hex.EncodeToString(sha1[:])
+	network.SendStoreMessage(data, key, target)
+	//Do something with the store response?
+	return true
 }

@@ -128,20 +128,29 @@ func removeFromList(list []Contact, current Contact) []Contact {
 	return list
 }
 
-func (kademlia *Kademlia) LookupData(hash string) string {
-	data := kademlia.ExtractData(hash)
-	if data != nil {
-		return string(data)
+func (kademlia *Kademlia) LookupData(hash string) []byte {
+	if kademlia.DataStorage[hash] != nil {
+		return kademlia.DataStorage[hash]
 	}
-	location := NewKademliaID(hash)
-	contacts := kademlia.Network.RoutingTable.FindClosestContacts(location, 5)
+	contacts := kademlia.Network.RoutingTable.FindClosestContacts(kademlia.Network.RoutingTable.me.ID, 5)
+	var queriedContacts []Contact
+
 	for _, contact := range contacts {
-		searches, found := kademlia.Network.SendFindDataMessage(hash, &contact)
-		if found {
-			return string(kademlia.ExtractData(searches)) //Unclear if this is the correct way, want to extract the data stored in node with kademliaID "contact"
+		//if new node, add it to list of queried nodes
+		if !containsContact(queriedContacts, contact) {
+			queriedContacts = append(queriedContacts, contact)
+			response, newNodes := kademlia.Network.SendFindDataMessage(hash, &contact)
+			//If response is empty then it has gotten suggested nodes from SendFindDataMessage which should be queried in later iterations
+			if response == "" {
+				contacts = append(contacts, newNodes...)
+			} else {
+				return []byte(response)
+			}
 		}
+
 	}
-	return "Did not find the data in the closest contacts" //not sure if this is what we want either
+	//Case: hash value not found
+	return nil
 }
 
 func (kademlia *Kademlia) ExtractData(hash string) (data []byte) {
@@ -149,7 +158,7 @@ func (kademlia *Kademlia) ExtractData(hash string) (data []byte) {
 	return res
 }
 
-func (kademlia *Kademlia) Store(data []byte) {
+func (kademlia *Kademlia) Store(data []byte) string {
 	sha1 := sha1.Sum(data) //hashes the data
 	key := hex.EncodeToString(sha1[:])
 	location := NewKademliaID(key)
@@ -157,13 +166,20 @@ func (kademlia *Kademlia) Store(data []byte) {
 
 	if len(contacts) <= 0 {
 		fmt.Println("Error, no suitable nodes to store the data could be found")
+		return ""
 	} else {
 		//blank because we do not care about the iteration variable
 		//we basically do a for each contact in contacts
 		for _, contact := range contacts {
-			kademlia.Network.SendStoreMessage(data, key, &contact)
+			if contact.ID == kademlia.Network.RoutingTable.me.ID {
+				kademlia.LocalStorage(data, key)
+			} else {
+				kademlia.Network.storeAtOtherNode(data, &contact)
+			}
+
 		}
 		fmt.Println(string(data) + " is now stored in the key: " + key)
+		return key
 	}
 }
 
