@@ -152,7 +152,7 @@ func (kademlia *Kademlia) LookupData(hash string) string {
 	contacts := kademlia.Network.RoutingTable.FindClosestContacts(location, 5)
 	for _, contact := range contacts {
 		searches, found := kademlia.Network.SendFindDataMessage(hash, &contact)
-		if found {
+		if found == nil {
 			return string(kademlia.ExtractData(searches)) //Unclear if this is the correct way, want to extract the data stored in node with kademliaID "contact"
 		}
 	}
