@@ -152,28 +152,6 @@ func (network *Network) SendFindContactMessage(contact *Contact, targetID *Kadem
 
 }
 
-func (network *Network) SendFindDataMessage(hash string, contact *Contact) (string, bool) {
-	msg := Message{
-		MsgType: "FIND",
-		Content: hash,
-		Sender:  network.RoutingTable.me,
-		Target:  *contact,
-	}
-	response, err := network.sendMessage(msg, contact)
-	if err != nil {
-		return ("Failed to contact target node."), false
-	}
-	var dataResponse string
-	err = json.Unmarshal(response, &dataResponse)
-	if err != nil {
-		return "Error during unmarshalling", false
-	} else if dataResponse == "" {
-		return "Data not found", false
-	} else {
-		return dataResponse, true
-	}
-}
-
 func (network *Network) SendStoreMessage(data []byte, key string, contact *Contact) bool { //förslag, använd error istället för bools
 
 	msg := Message{
@@ -201,3 +179,27 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 	}
 
 }
+
+func (network *Network) SendFindDataMessage(hash string, contact *Contact) (string, bool) {
+	msg := Message{
+		MsgType: "FIND",
+		Content: hash,
+		Sender:  network.RoutingTable.me,
+		Target:  *contact,
+	}
+	response, err := network.sendMessage(msg, contact)
+	if err != nil {
+		return ("Failed to contact target node."), false
+	}
+	var dataResponse string
+	err = json.Unmarshal(response, &dataResponse)
+	if err != nil {
+		return "Error during unmarshalling", false
+	} else if dataResponse == "" {
+		return "Data not found", false
+	} else {
+		return dataResponse, true
+	}
+}
+
+
