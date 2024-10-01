@@ -1,30 +1,48 @@
 package kademlia
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // FIXME: This test doesn't actually test anything. There is only one assertion
 // that is included as an example.
 
 func TestRoutingTable(t *testing.T) {
-	rt := NewRoutingTable(NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8000"))
+	contact1 := NewContact(NewKademliaID("1000000000000000000000000000000000000000"), "localhost:8000")
+	contact2 := NewContact(NewKademliaID("2000000000000000000000000000000000000000"), "localhost:8000")
+	contact3 := NewContact(NewKademliaID("3000000000000000000000000000000000000000"), "localhost:8000")
+	contact4 := NewContact(NewKademliaID("4000000000000000000000000000000000000000"), "localhost:8000")
+	contact5 := NewContact(NewKademliaID("5000000000000000000000000000000000000000"), "localhost:8000")
+	contact6 := NewContact(NewKademliaID("6000000000000000000000000000000000000000"), "localhost:8000")
+	rt := NewRoutingTable(contact1)
+	rt.AddContact(contact2)
+	rt.AddContact(contact3)
+	rt.AddContact(contact4)
+	rt.AddContact(contact5)
+	rt.AddContact(contact6)
 
-	rt.AddContact(NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8001"))
-	rt.AddContact(NewContact(NewKademliaID("1111111100000000000000000000000000000000"), "localhost:8002"))
-	rt.AddContact(NewContact(NewKademliaID("1111111200000000000000000000000000000000"), "localhost:8002"))
-	rt.AddContact(NewContact(NewKademliaID("1111111300000000000000000000000000000000"), "localhost:8002"))
-	rt.AddContact(NewContact(NewKademliaID("1111111400000000000000000000000000000000"), "localhost:8002"))
-	rt.AddContact(NewContact(NewKademliaID("2111111400000000000000000000000000000000"), "localhost:8002"))
+	t.Run("Test FindClosestContacts", func(t *testing.T) {
+		contacts := rt.FindClosestContacts(contact2.ID, 1)
+		assert.Equal(t, 1, len(contacts))
+		assert.Equal(t, contact2.ID, contacts[0].ID)
 
-	contacts := rt.FindClosestContacts(NewKademliaID("2111111400000000000000000000000000000000"), 20)
-	for i := range contacts {
-		fmt.Println(contacts[i].String())
-	}
+		contacts2 := rt.FindClosestContacts(contact2.ID, 3)
+		assert.Equal(t, 3, len(contacts2))
+		assert.Equal(t, contact2.ID, contacts2[0].ID)
 
-	// TODO: This is just an example. Make more meaningful assertions.
-	if len(contacts) != 6 {
-		t.Fatalf("Expected 6 contacts but instead got %d", len(contacts))
-	}
+		contacts3 := rt.FindClosestContacts(contact2.ID, 10)
+		assert.Equal(t, 5, len(contacts3))
+		assert.Equal(t, contact2.ID, contacts3[0].ID)
+
+		for i := 1; i < len(contacts3); i++ {
+			assert.True(t, contacts3[i-1].distance.Less(contacts3[i].distance))
+		}
+
+		for i := 0; i < len(contacts2); i++ {
+			assert.Equal(t, contacts2[i], contacts3[i])
+		}
+	})
 }
+
