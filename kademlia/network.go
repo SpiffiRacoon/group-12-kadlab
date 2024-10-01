@@ -56,7 +56,7 @@ func (network *Network) Listen(ip string, port int) error {
 	}
 }
 
-func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, error) {
+func (network *Network) sendMessage(msg Message, contact *Contact) ([]byte, error) {
 	conn, err := net.Dial("udp", contact.Address)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
@@ -91,7 +91,7 @@ func (network *Network) SendPingMessage(target *Contact) bool {
 		Sender:  network.Me,
 	}
 
-	responseMsg, err := network.SendMessage(msg, target)
+	responseMsg, err := network.sendMessage(msg, target)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", target.ID, "not responding", err.Error())
 		return false
@@ -114,7 +114,7 @@ func (network *Network) SendJoinMessage(contact *Contact) bool {
 		Sender:  network.Me,
 	}
 
-	responseMsg, err := network.SendMessage(msg, contact)
+	responseMsg, err := network.sendMessage(msg, contact)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
 		return false
@@ -137,7 +137,7 @@ func (network *Network) SendFindContactMessage(contact *Contact, targetID *Kadem
 		Sender:  network.Me,
 	}
 
-	contactsByte, err := network.SendMessage(msg, contact)
+	contactsByte, err := network.sendMessage(msg, contact)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
 		return nil, err
@@ -188,7 +188,7 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 		Content: key + ";" + string(data), //Order here can be reversed if needed but should not matter as long as you know the order
 		Sender:  network.RoutingTable.me,
 	}
-	responseMsg, err := network.SendMessage(msg, contact)
+	responseMsg, err := network.sendMessage(msg, contact)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
 		return false

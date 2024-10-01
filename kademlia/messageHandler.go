@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -17,8 +18,7 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 
 	switch msg.MsgType {
 	case "PING":
-		fmt.Println("Received PING from ", msg.Sender)
-		response := network.HandlePingMessage()
+		response := network.handlePingMessage()
 		responseBytes, err := json.Marshal(response)
 		if err != nil {
 			fmt.Println("Error marshalling response")
@@ -26,8 +26,7 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 		}
 		return responseBytes, nil
 	case "JOIN":
-		fmt.Println("Received JOIN from ", msg.Sender)
-		response := network.HandleJoinMessage(msg.Sender)
+		response := network.handleJoinMessage(msg.Sender)
 		responseBytes, err := json.Marshal(response)
 		if err != nil {
 			fmt.Println("Error marshalling response")
@@ -35,9 +34,8 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 		}
 		return responseBytes, nil
 	case "FIND_CONTACT":
-		fmt.Println("Received FIND_CONTACT from ", msg.Sender)
 		target := NewKademliaID(msg.Content)
-		contacts := network.HandleFindContactMessage(target, 3)
+		contacts := network.handleFindContactMessage(target, 3)
 		contactsBytes, err := json.Marshal(contacts)
 		if err != nil {
 			fmt.Println("Error marshalling contacts")
@@ -45,7 +43,8 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 		}
 		return contactsBytes, nil
 	case "STORE":
-		fmt.Println("Received STORE from ", msg.Sender)
+		fmt.Println("Received STORE from ", msg.Sender, "NOT IMPLEMENTED")
+		network.handleStoreMessage()
 	case "FIND_VALUE":
 		fmt.Println("Received FIND_VALUE from ", msg.Sender)
 		target := msg.Content
@@ -66,20 +65,21 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 		}
 		return dataBytes, nil
 	default:
-		fmt.Println("Unknown message type: " + msg.MsgType)
+		return nil, errors.New("Unknown message type: " + msg.MsgType)
 	}
 	return nil, nil
 }
 
-func (network *Network) HandlePingMessage() Message {
+func (network *Network) handlePingMessage() Message {
 	pong := Message{
 		MsgType: "PONG",
 		Content: "I'm alive",
+		Sender:  network.Me,
 	}
 	return pong
 }
 
-func (network *Network) HandleJoinMessage(sender Contact) Message {
+func (network *Network) handleJoinMessage(sender Contact) Message {
 	network.RoutingTable.AddContact(sender)
 	joinResponse := Message{
 		MsgType: "JOIN_RESPONSE",
@@ -88,7 +88,7 @@ func (network *Network) HandleJoinMessage(sender Contact) Message {
 	return joinResponse
 }
 
-func (network *Network) HandleFindContactMessage(target *KademliaID, count int) []Contact {
+func (network *Network) handleFindContactMessage(target *KademliaID, count int) []Contact {
 	contacts := network.RoutingTable.FindClosestContacts(target, count)
 	return contacts
 }
