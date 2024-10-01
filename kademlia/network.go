@@ -54,7 +54,7 @@ func (network *Network) Listen(ip string, port int) error {
 	}
 }
 
-func (network *Network) SendMessage(msg Message, contact *Contact) ([]byte, error) {
+func (network *Network) sendMessage(msg Message, contact *Contact) ([]byte, error) {
 	conn, err := net.Dial("udp", contact.Address)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
@@ -89,7 +89,7 @@ func (network *Network) SendPingMessage(target *Contact) bool {
 		Sender:  network.Me,
 	}
 
-	responseMsg, err := network.SendMessage(msg, target)
+	responseMsg, err := network.sendMessage(msg, target)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", target.ID, "not responding", err.Error())
 		return false
@@ -112,7 +112,7 @@ func (network *Network) SendJoinMessage(contact *Contact) bool {
 		Sender:  network.Me,
 	}
 
-	responseMsg, err := network.SendMessage(msg, contact)
+	responseMsg, err := network.sendMessage(msg, contact)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
 		return false
@@ -135,7 +135,7 @@ func (network *Network) SendFindContactMessage(contact *Contact, targetID *Kadem
 		Sender:  network.Me,
 	}
 
-	contactsByte, err := network.SendMessage(msg, contact)
+	contactsByte, err := network.sendMessage(msg, contact)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
 		return nil, err
@@ -152,28 +152,6 @@ func (network *Network) SendFindContactMessage(contact *Contact, targetID *Kadem
 
 }
 
-func (network *Network) SendFindDataMessage(hash string, contact *Contact) (string, bool) {
-	msg := Message{
-		MsgType: "FIND",
-		Content: hash,
-		Sender:  network.RoutingTable.me,
-		Target:  *contact,
-	}
-	response, err := network.SendMessage(msg, contact)
-	if err != nil {
-		return ("Failed to contact target node."), false
-	}
-	var dataResponse string
-	err = json.Unmarshal(response, &dataResponse)
-	if err != nil {
-		return "Error during unmarshalling", false
-	} else if dataResponse == "" {
-		return "Data not found", false
-	} else {
-		return dataResponse, true
-	}
-}
-
 func (network *Network) SendStoreMessage(data []byte, key string, contact *Contact) bool { //förslag, använd error istället för bools
 
 	msg := Message{
@@ -182,7 +160,7 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 		Sender:  network.RoutingTable.me,
 		Target:  *contact,
 	}
-	responseMsg, err := network.SendMessage(msg, contact)
+	responseMsg, err := network.sendMessage(msg, contact)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
 		return false
@@ -201,3 +179,27 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 	}
 
 }
+
+func (network *Network) SendFindDataMessage(hash string, contact *Contact) (string, bool) {
+	msg := Message{
+		MsgType: "FIND",
+		Content: hash,
+		Sender:  network.RoutingTable.me,
+		Target:  *contact,
+	}
+	response, err := network.sendMessage(msg, contact)
+	if err != nil {
+		return ("Failed to contact target node."), false
+	}
+	var dataResponse string
+	err = json.Unmarshal(response, &dataResponse)
+	if err != nil {
+		return "Error during unmarshalling", false
+	} else if dataResponse == "" {
+		return "Data not found", false
+	} else {
+		return dataResponse, true
+	}
+}
+
+

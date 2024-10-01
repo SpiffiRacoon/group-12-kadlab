@@ -4,6 +4,8 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"net"
+	"strconv"
 	"time"
 )
 
@@ -29,7 +31,18 @@ func (kademlia *Kademlia) Start() {
 			kademlia.JoinNetwork(&kademlia.BootstrapNode)
 		}()
 	}
-	err := kademlia.Network.Listen("0.0.0.0", 3000)
+
+	host, portStr, err := net.SplitHostPort(kademlia.Me.Address)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		fmt.Println("Error converting port to int:", err)
+		return
+	}
+	err = kademlia.Network.Listen(host, port)
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +66,6 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 
 	fmt.Println("Network joined.")
 	kademlia.PopulateNetwork()
-	fmt.Printf("kademlia.Network.RoutingTable.buckets: %v\n", kademlia.Network.RoutingTable.buckets)
 }
 
 func (kademlia *Kademlia) PopulateNetwork() {
@@ -105,6 +117,9 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
 			closestNodes = closestNodes[:k]
 		}
 	}
+
+	
+	//TODO: sort the contacts?
 
 	return closestNodes, nil
 }
