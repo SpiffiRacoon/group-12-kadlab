@@ -26,21 +26,22 @@ func TestNetwork(t *testing.T) {
 
 
 	t.Run("Test SendPingMessage", func(t *testing.T) {
-		response := network1.SendPingMessage(&contact2)
-		assert.True(t, response)
+		err := network1.SendPingMessage(&contact2)
+		assert.Nil(t, err)
 
-		response = network1.SendPingMessage(&contact3)
-		assert.False(t, response)
+		err = network1.SendPingMessage(&contact3)
+		assert.NotNil(t, err)
+		//assert.Equal(t, Error()
 	})
 
 	t.Run("Test SendJoinMessage", func(t *testing.T) {
 		//Result: contact1 is added to contact2's routing table
-		response := network1.SendJoinMessage(&contact2)
-		assert.True(t, response)
+		err := network1.SendJoinMessage(&contact2)
+		assert.Nil(t, err)
 
 		//Result: contact3 is not added to contact2's routing table
-		response = network1.SendJoinMessage(&contact3)
-		assert.False(t, response)
+		err = network1.SendJoinMessage(&contact3)
+		assert.NotNil(t, err)
 	})
 
 	t.Run("Test SendFindContactMessage", func(t *testing.T) {

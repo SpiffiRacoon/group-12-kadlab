@@ -82,7 +82,7 @@ func (network *Network) sendMessage(msg Message, contact *Contact) ([]byte, erro
 	return response[:byteNum], err
 }
 
-func (network *Network) SendPingMessage(target *Contact) bool {
+func (network *Network) SendPingMessage(target *Contact) error {
 	msg := Message{
 		MsgType: "PING",
 		Content: "PING",
@@ -92,20 +92,20 @@ func (network *Network) SendPingMessage(target *Contact) bool {
 	responseMsg, err := network.sendMessage(msg, target)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", target.ID, "not responding", err.Error())
-		return false
+		return err
 	} else {
 		var msg Message
 		err := json.Unmarshal(responseMsg, &msg)
 		if err != nil {
 			fmt.Println("Error unmarshalling message")
-			return false
+			return err
 		}
 		fmt.Printf("%s %s %s %s %s\n", target.ID, "responding on port:", target.Address, "with ", msg.Content)
-		return true
+		return err
 	}
 }
 
-func (network *Network) SendJoinMessage(contact *Contact) bool {
+func (network *Network) SendJoinMessage(contact *Contact) error {
 	msg := Message{
 		MsgType: "JOIN",
 		Content: network.Me.ID.String(),
@@ -115,16 +115,16 @@ func (network *Network) SendJoinMessage(contact *Contact) bool {
 	responseMsg, err := network.sendMessage(msg, contact)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
-		return false
+		return err
 	} else {
 		var msg Message
 		err := json.Unmarshal(responseMsg, &msg)
 		if err != nil {
 			fmt.Println("Error unmarshalling message")
-			return false
+			return err
 		}
 		fmt.Printf("%s %s %s %s %s\n", contact.ID, "responding on port:", contact.Address, "with ", msg.Content)
-		return true
+		return nil
 	}
 }
 
@@ -152,7 +152,7 @@ func (network *Network) SendFindContactMessage(contact *Contact, targetID *Kadem
 
 }
 
-func (network *Network) SendStoreMessage(data []byte, key string, contact *Contact) bool { //förslag, använd error istället för bools
+func (network *Network) SendStoreMessage(data []byte, key string, contact *Contact) error { //förslag, använd error istället för bools
 
 	msg := Message{
 		MsgType: "STORE",
@@ -163,24 +163,24 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 	responseMsg, err := network.sendMessage(msg, contact)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
-		return false
+		return err
 	} else {
 		var storeResponse Message
 		err := json.Unmarshal(responseMsg, &storeResponse)
 		if err != nil {
 			fmt.Println("Error during unmarshalling")
-			return false
+			return err
 		}
 		if storeResponse.MsgType != "STORED" {
 			fmt.Println("Failed to store")
-			return false
+			return err
 		}
-		return true
+		return nil
 	}
 
 }
 
-func (network *Network) SendFindDataMessage(hash string, contact *Contact) (string, bool) {
+func (network *Network) SendFindDataMessage(hash string, contact *Contact) (string, error) {
 	msg := Message{
 		MsgType: "FIND",
 		Content: hash,
@@ -189,16 +189,16 @@ func (network *Network) SendFindDataMessage(hash string, contact *Contact) (stri
 	}
 	response, err := network.sendMessage(msg, contact)
 	if err != nil {
-		return ("Failed to contact target node."), false
+		return ("Failed to contact target node."), err
 	}
 	var dataResponse string
 	err = json.Unmarshal(response, &dataResponse)
 	if err != nil {
-		return "Error during unmarshalling", false
+		return "Error during unmarshalling", err
 	} else if dataResponse == "" {
-		return "Data not found", false
+		return "data not found", fmt.Errorf("data not found")
 	} else {
-		return dataResponse, true
+		return dataResponse, nil
 	}
 }
 
