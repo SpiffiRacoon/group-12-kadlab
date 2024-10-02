@@ -1,6 +1,7 @@
 package kademlia
 
-const bucketSize = 20
+//TODO: update bucketSize
+const bucketSize = 5
 
 
 // RoutingTable definition
@@ -68,4 +69,16 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 	}
 
 	return IDLength*8 - 1
+}
+
+// GenerateIDForBucket generates an ID that falls into the specified bucket index
+func (routingTable *RoutingTable) GenerateIDForBucket(bucketIndex int) *KademliaID {
+	newID := routingTable.me.ID.Copy()
+
+	byteIndex := bucketIndex / 8
+	bitIndex := bucketIndex % 8
+
+	newID[byteIndex] ^= 1 << uint8(7-bitIndex) 
+
+	return newID
 }
