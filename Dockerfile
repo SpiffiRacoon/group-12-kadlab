@@ -5,6 +5,7 @@ WORKDIR /kademlia-app
 COPY go.mod .
 COPY main.go ./
 COPY kademlia/*.go ./kademlia/
+COPY kademlia/cli/*.go ./kademlia/cli/
 
 RUN go mod download
 
