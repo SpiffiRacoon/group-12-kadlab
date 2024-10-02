@@ -5,6 +5,7 @@ package main
 import (
 	"bufio"
 	"d7024e/kademlia"
+	"d7024e/kademlia/cli"
 	"fmt"
 	"io"
 	"net"
@@ -47,7 +48,7 @@ func main() {
 	contact := kademlia.NewContact(kademlia.NewRandomKademliaID(), localIP+":"+NodePort)
 	fmt.Println(contact.String())
 	fmt.Println("BootstrapIP: " + bootstrapIP) // TODO: remove
-	
+
 	node := kademlia.NewKademlia(contact, IS_BOOTSTRAP)
 
 	if IS_BOOTSTRAP {
@@ -58,7 +59,7 @@ func main() {
 	bootsrapNode := kademlia.NewContact(
 		kademlia.NewKademliaID("B0075712A9000000000000000000000000000000"), 
 		bootstrapIP+":3000")
-	
+
 	node.BootstrapNode = bootsrapNode
 	go node.Start()
 
@@ -70,7 +71,7 @@ func main() {
 			os.Exit(1)
 		}
 		input := scanner.Text()
-		fmt.Println("Recived command: " + input) // Replace with cli function call.
+		cli.Kcli(input, node) // Replace with cli function call.
 	}
 
 }
