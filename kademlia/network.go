@@ -196,7 +196,7 @@ func (network *Network) SendFindDataMessage(hash string, contact *Contact) (stri
 	if err != nil {
 		return "Error during unmarshalling", err
 	} else if dataResponse == "" {
-		return "Data not found", fmt.Errorf("Data not found")
+		return "data not found", fmt.Errorf("data not found")
 	} else {
 		return dataResponse, nil
 	}
