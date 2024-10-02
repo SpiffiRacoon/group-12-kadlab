@@ -25,11 +25,12 @@ func TestNetwork(t *testing.T) {
 	})
 
 	t.Run("Test SendPingMessage", func(t *testing.T) {
-		response := network1.SendPingMessage(&contact2)
-		assert.True(t, response)
+		err := network1.SendPingMessage(&contact2)
+		assert.Nil(t, err)
 
-		response = network1.SendPingMessage(&contact3)
-		assert.False(t, response)
+		err = network1.SendPingMessage(&contact3)
+		assert.NotNil(t, err)
+		//assert.Equal(t, Error()
 	})
 
 	t.Run("Test SendJoinMessage", func(t *testing.T) {
