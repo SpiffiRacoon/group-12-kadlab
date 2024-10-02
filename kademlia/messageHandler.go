@@ -43,12 +43,18 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 		}
 		return contactsBytes, nil
 	case "STORE":
-		fmt.Println("Received STORE from ", msg.Sender, "NOT IMPLEMENTED")
-		network.handleStoreMessage()
+		fmt.Println("Received STORE from ", msg.Sender)
+		response := network.handleStoreMessage(msg.Content)
+		responseBytes, err := json.Marshal(response)
+		if err != nil {
+			fmt.Println("Error marshalling response")
+			return nil, err
+		}
+		return responseBytes, nil
 	case "FIND_VALUE":
 		fmt.Println("Received FIND_VALUE from ", msg.Sender)
 		target := msg.Content
-		data, contacts := network.HandleFindDataMessage(target)
+		data, contacts := network.handleFindDataMessage(target)
 		if data == nil {
 			contactsBytes, err := json.Marshal(contacts)
 			if err != nil {
@@ -67,7 +73,6 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 	default:
 		return nil, errors.New("Unknown message type: " + msg.MsgType)
 	}
-	return nil, nil
 }
 
 func (network *Network) handlePingMessage() Message {
@@ -93,7 +98,7 @@ func (network *Network) handleFindContactMessage(target *KademliaID, count int) 
 	return contacts
 }
 
-func (network *Network) HandleStoreMessage(content string) Message {
+func (network *Network) handleStoreMessage(content string) Message {
 	splitContent := strings.Split(content, ";")
 	tryStore := network.kademlia.ExtractData(splitContent[0])
 	if tryStore != nil {
@@ -103,6 +108,7 @@ func (network *Network) HandleStoreMessage(content string) Message {
 		}
 		return errMsg
 	} else {
+		network.kademlia.LocalStorage([]byte(splitContent[1]), splitContent[0])
 		storedMsg := Message{
 			MsgType: "STORED",
 			Content: "Data stored successfully on node",
@@ -111,7 +117,7 @@ func (network *Network) HandleStoreMessage(content string) Message {
 	}
 }
 
-func (network *Network) HandleFindDataMessage(content string) ([]byte, []Contact) {
+func (network *Network) handleFindDataMessage(content string) ([]byte, []Contact) {
 	splitContent := strings.Split(content, ";")
 	tryFind := network.kademlia.ExtractData(splitContent[0])
 	if tryFind != nil {
@@ -121,5 +127,3 @@ func (network *Network) HandleFindDataMessage(content string) ([]byte, []Contact
 		return nil, suggestedContacts
 	}
 }
-
-//buskig trattel

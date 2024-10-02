@@ -118,7 +118,6 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
 		}
 	}
 
-	
 	//TODO: sort the contacts?
 
 	return closestNodes, nil
@@ -173,28 +172,18 @@ func (kademlia *Kademlia) ExtractData(hash string) (data []byte) {
 	return res
 }
 
-func (kademlia *Kademlia) Store(data []byte) string {
+func (kademlia *Kademlia) Store(data []byte) error {
 	sha1 := sha1.Sum(data) //hashes the data
 	key := hex.EncodeToString(sha1[:])
 	location := NewKademliaID(key)
 	contacts, _ := kademlia.LookupContact(location)
 
-	if len(contacts) <= 0 {
-		fmt.Println("Error, no suitable nodes to store the data could be found")
-		return ""
+	if contacts[0].ID == kademlia.Network.RoutingTable.me.ID {
+		kademlia.LocalStorage(data, key)
+		return nil
 	} else {
-		//blank because we do not care about the iteration variable
-		//we basically do a for each contact in contacts
-		for _, contact := range contacts {
-			if contact.ID == kademlia.Network.RoutingTable.me.ID {
-				kademlia.LocalStorage(data, key)
-			} else {
-				kademlia.Network.storeAtOtherNode(data, &contact)
-			}
-
-		}
-		fmt.Println(string(data) + " is now stored in the key: " + key)
-		return key
+		kademlia.Network.storeAtOtherNode(data, &contacts[0])
+		return nil
 	}
 }
 

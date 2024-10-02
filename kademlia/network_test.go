@@ -1,11 +1,12 @@
 package kademlia
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
 
 func TestNetwork(t *testing.T) {
 	contact1 := NewContact(NewKademliaID("1000000000000000000000000000000000000000"), "localhost:8001")
@@ -16,14 +17,12 @@ func TestNetwork(t *testing.T) {
 
 	contact3 := NewContact(NewKademliaID("3000000000000000000000000000000000000000"), "localhost:8003")
 
-
 	t.Run("Test Listen", func(t *testing.T) {
-		go func (){
+		go func() {
 			err := network2.Listen("0.0.0.0", 8002)
 			assert.Nil(t, err)
 		}()
 	})
-
 
 	t.Run("Test SendPingMessage", func(t *testing.T) {
 		response := network1.SendPingMessage(&contact2)
@@ -35,12 +34,12 @@ func TestNetwork(t *testing.T) {
 
 	t.Run("Test SendJoinMessage", func(t *testing.T) {
 		//Result: contact1 is added to contact2's routing table
-		response := network1.SendJoinMessage(&contact2)
-		assert.True(t, response)
+		err := network1.SendJoinMessage(&contact2)
+		assert.NotNil(t, err)
 
 		//Result: contact3 is not added to contact2's routing table
-		response = network1.SendJoinMessage(&contact3)
-		assert.False(t, response)
+		err = network1.SendJoinMessage(&contact3)
+		assert.NotNil(t, err)
 	})
 
 	t.Run("Test SendFindContactMessage", func(t *testing.T) {
@@ -61,15 +60,13 @@ func TestNetwork(t *testing.T) {
 		assert.NotContains(t, contacts, contact3)
 	})
 
-	/*
 	//TODO: Implement this test
-	t.Run("Test SendStoreDataMessage", func(t *testing.T) {
+	t.Run("Test SendStoreMessage", func(t *testing.T) {
 		//Result: data is stored in contact2's routing table
 		sha1 := sha1.Sum([]byte("data"))
 		key := hex.EncodeToString(sha1[:])
 		response := network1.SendStoreMessage([]byte("data"), key, &contact2)
-		assert.True(t, response)
+		assert.Nil(t, response)
 	})
-	*/
-}
 
+}

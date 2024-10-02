@@ -107,7 +107,7 @@ func (network *Network) SendPingMessage(target *Contact) bool {
 	}
 }
 
-func (network *Network) SendJoinMessage(contact *Contact) bool {
+func (network *Network) SendJoinMessage(contact *Contact) error {
 	msg := Message{
 		MsgType: "JOIN",
 		Content: network.Me.ID.String(),
@@ -117,16 +117,16 @@ func (network *Network) SendJoinMessage(contact *Contact) bool {
 	responseMsg, err := network.sendMessage(msg, contact)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
-		return false
+		return err
 	} else {
 		var msg Message
 		err := json.Unmarshal(responseMsg, &msg)
 		if err != nil {
 			fmt.Println("Error unmarshalling message")
-			return false
+			return err
 		}
 		fmt.Printf("%s %s %s %s %s\n", contact.ID, "responding on port:", contact.Address, "with ", msg.Content)
-		return true
+		return nil
 	}
 }
 
@@ -160,7 +160,7 @@ func (network *Network) SendFindDataMessage(hash string, contact *Contact) (stri
 		Content: hash,
 		Sender:  network.RoutingTable.me,
 	}
-	response, err := network.SendMessage(msg, contact)
+	response, err := network.sendMessage(msg, contact)
 	if err != nil {
 		fmt.Println("Error during SendMessage")
 		return "", nil
@@ -181,7 +181,7 @@ func (network *Network) SendFindDataMessage(hash string, contact *Contact) (stri
 	}
 }
 
-func (network *Network) SendStoreMessage(data []byte, key string, contact *Contact) bool { //förslag, använd error istället för bools
+func (network *Network) SendStoreMessage(data []byte, key string, contact *Contact) error {
 
 	msg := Message{
 		MsgType: "STORE",
@@ -189,29 +189,29 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 		Sender:  network.RoutingTable.me,
 	}
 	responseMsg, err := network.sendMessage(msg, contact)
+	print(responseMsg)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
-		return false
+		return err
 	} else {
 		var storeResponse Message
 		err := json.Unmarshal(responseMsg, &storeResponse)
 		if err != nil {
 			fmt.Println("Error during unmarshalling")
-			return false
+			return err
 		}
 		if storeResponse.MsgType != "STORED" {
 			fmt.Println("Failed to store")
-			return false
+			return err
 		}
-		return true
+		return nil
 	}
 
 }
 
-func (network *Network) storeAtOtherNode(data []byte, target *Contact) bool {
+func (network *Network) storeAtOtherNode(data []byte, target *Contact) {
 	sha1 := sha1.Sum(data) //hashes the data
 	key := hex.EncodeToString(sha1[:])
 	network.SendStoreMessage(data, key, target)
 	//Do something with the store response?
-	return true
 }
