@@ -86,6 +86,7 @@ func (routingTable *RoutingTable) GenerateIDForBucket(bucketIndex int) *Kademlia
 }
 
 func (routingTable *RoutingTable) PrintRoutingTable() {
+	count := 0
 	for i := 0; i < IDLength*8; i++ {
 		bucket := routingTable.buckets[i]
 		if bucket.Len() != 0 {
@@ -94,6 +95,8 @@ func (routingTable *RoutingTable) PrintRoutingTable() {
 		for elt := bucket.list.Front(); elt != nil; elt = elt.Next() {
 			contact := elt.Value.(Contact)
 			fmt.Println("Contact: ", contact)
+			count++
 		}
 	}
+	fmt.Println("Total contacts: ", count)
 }
