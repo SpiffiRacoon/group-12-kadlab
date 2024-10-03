@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -74,7 +75,7 @@ func (kademlia *Kademlia) PopulateNetwork() {
 	fmt.Println("Populating the network...")
 
 	// Define the number of random IDs to search for and populate the network with
-	for i := 0; i < IDLength*8; i = 2*i+1 { //Results in 8 iterations
+	for i := 0; i < IDLength*8; i++ { //2*i+1 Results in 8 iterations
 		id := kademlia.Network.RoutingTable.GenerateIDForBucket(i)
 		contacts, err := kademlia.LookupContact(id)
 		if err != nil {
@@ -97,37 +98,56 @@ func (kademlia *Kademlia) PopulateNetwork() {
 }
 
 func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
-	k := 3
+	k := 3  // Number of closest nodes to query (bucket size)
+	alpha := 3  // Degree of parallelism (number of nodes to query in each iteration)
 	closestNodes := kademlia.Network.RoutingTable.FindClosestContacts(target, k)
 
-	queriedNodes := []Contact{}
+	queriedNodes := []Contact{}  // Tracks nodes that have already been queried
+	foundCloser := true  // Tracks if new, closer nodes are found
 
-	for _, node := range closestNodes {
-		if containsContact(queriedNodes, node) {
-			break
-		}
+	for foundCloser {
+		foundCloser = false  // Reset the flag; will set to true if closer nodes are found
 
-		queriedNodes = append(queriedNodes, node)
+		// Iterate over the `closestNodes` and query unqueried nodes
+		for i := 0; i < len(closestNodes) && i < alpha; i++ {
+			node := closestNodes[i]
 
-		newNodes, err := kademlia.Network.SendFindContactMessage(&node, target)
-		if err != nil {
-			// If the node is not responding, remove it from our closestNodes list
-			closestNodes = removeFromList(closestNodes, node)
-			continue
-		}
+			// Skip nodes that have already been queried
+			if containsContact(queriedNodes, node) {
+				continue
+			}
 
-		closestNodes = append(closestNodes, newNodes...)
+			queriedNodes = append(queriedNodes, node)
 
-		if len(closestNodes) > k {
-			closestNodes = closestNodes[:k]
+			// Query the node for closer contacts
+			newNodes, err := kademlia.Network.SendFindContactMessage(&node, target)
+			if err != nil {
+				// Remove non-responsive nodes from the closestNodes list
+				closestNodes = removeFromList(closestNodes, node)
+				continue
+			}
+
+			// Add the newly discovered nodes to the list of closest nodes
+			closestNodes = append(closestNodes, newNodes...)
+
+			// Sort by proximity to the target (closer nodes first)
+			sort.Slice(closestNodes, func(i, j int) bool {
+				return closestNodes[i].ID.CalcDistance(target).Less(closestNodes[j].ID.CalcDistance(target))
+			})
+
+			// Ensure we only keep the k closest nodes
+			if len(closestNodes) > k {
+				closestNodes = closestNodes[:k]
+			}
+
+			// If new closer nodes were added, we continue querying
+			foundCloser = true
 		}
 	}
 
-	
-	//TODO: sort the contacts?
-
 	return closestNodes, nil
 }
+
 
 func containsContact(list []Contact, current Contact) bool {
 	for _, i := range list {
