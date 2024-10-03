@@ -15,8 +15,19 @@ func Kcli(input string, node *kademlia.Kademlia) {
 		fmt.Println("No command given.")
 	} else {
 		command := commandNdata[0]
-		fmt.Println(command)
 		switch command {
+		case "ping":
+			if len(commandNdata) == 2 {
+				id := kademlia.NewKademliaID(commandNdata[1])
+				contact, err := node.LookupContact(id)
+				if err != nil {
+					fmt.Println("failed to fetch contact from target id:", err)
+				} else {
+					node.Network.SendPingMessage(&contact[0])
+				}
+			} else {
+				fmt.Println("This command needs one additional argument")
+			}
 		case "put":
 			if len(commandNdata) == 2 {
 				node.Store([]byte(commandNdata[1]))
@@ -35,6 +46,8 @@ func Kcli(input string, node *kademlia.Kademlia) {
 			os.Exit(0)
 		default:
 			fmt.Println("not a valid argument")
+
 		}
+		fmt.Print("kCLI@", node.Me.ID, " % ")
 	}
 }
