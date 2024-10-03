@@ -42,6 +42,7 @@ func (kademlia *Kademlia) Start() {
 		fmt.Println("Error converting port to int:", err)
 		return
 	}
+
 	err = kademlia.Network.Listen(host, port)
 	if err != nil {
 		panic(err)
@@ -66,26 +67,30 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 
 	fmt.Println("Network joined.")
 	kademlia.PopulateNetwork()
+	kademlia.Network.RoutingTable.PrintRoutingTable()
 }
 
 func (kademlia *Kademlia) PopulateNetwork() {
 	fmt.Println("Populating the network...")
 
 	// Define the number of random IDs to search for and populate the network with
-	numLookups := 10
-
-	for i := 0; i < numLookups; i++ {
-		randomID := NewRandomKademliaID()
-
-		contacts, err := kademlia.LookupContact(randomID)
+	for i := 0; i < IDLength*8; i = 2*i+1 { //Results in 8 iterations
+		id := kademlia.Network.RoutingTable.GenerateIDForBucket(i)
+		contacts, err := kademlia.LookupContact(id)
 		if err != nil {
 			fmt.Println("Error finding contacts during network population")
 			continue
 		}
 
 		for _, contact := range contacts {
-			kademlia.Network.RoutingTable.AddContact(contact)
+			err = kademlia.Network.SendPingMessage(&contact)
+			if err != nil {
+				fmt.Println("Error pinging contact during network population, node may be down")
+			}else {
+				kademlia.Network.RoutingTable.AddContact(contact)
+			}
 		}
+		fmt.Printf("Found %d contacts for ID %s\n", len(contacts), id.String())
 	}
 
 	fmt.Println("Network population complete.")

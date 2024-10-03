@@ -1,7 +1,9 @@
 package kademlia
 
+import "fmt"
+
 //TODO: update bucketSize
-const bucketSize = 5
+const bucketSize = 20
 
 
 // RoutingTable definition
@@ -81,4 +83,17 @@ func (routingTable *RoutingTable) GenerateIDForBucket(bucketIndex int) *Kademlia
 	newID[byteIndex] ^= 1 << uint8(7-bitIndex) 
 
 	return newID
+}
+
+func (routingTable *RoutingTable) PrintRoutingTable() {
+	for i := 0; i < IDLength*8; i++ {
+		bucket := routingTable.buckets[i]
+		if bucket.Len() != 0 {
+			fmt.Println("Bucket: ", i)
+		}
+		for elt := bucket.list.Front(); elt != nil; elt = elt.Next() {
+			contact := elt.Value.(Contact)
+			fmt.Println("Contact: ", contact)
+		}
+	}
 }
