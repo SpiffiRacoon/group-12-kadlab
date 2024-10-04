@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"reflect"
 	"strings"
 )
 
@@ -100,8 +101,9 @@ func (network *Network) handleFindContactMessage(target *KademliaID, count int) 
 
 func (network *Network) handleStoreMessage(content string) Message {
 	splitContent := strings.Split(content, ";")
-	tryStore := network.kademlia.ExtractData(splitContent[0])
-	if tryStore != nil {
+	fmt.Println(reflect.TypeOf(splitContent[0]), splitContent[0])
+	_, exists := network.kademlia.ExtractData(splitContent[0])
+	if exists {
 		errMsg := Message{
 			MsgType: "ERROR_STORE",
 			Content: "Store location is occupied",
@@ -119,9 +121,9 @@ func (network *Network) handleStoreMessage(content string) Message {
 
 func (network *Network) handleFindDataMessage(content string) ([]byte, []Contact) {
 	splitContent := strings.Split(content, ";")
-	tryFind := network.kademlia.ExtractData(splitContent[0])
-	if tryFind != nil {
-		return tryFind, nil
+	val, exists := network.kademlia.ExtractData(splitContent[0])
+	if exists {
+		return val, nil
 	} else {
 		suggestedContacts := network.RoutingTable.FindClosestContacts(network.RoutingTable.me.ID, 5)
 		return nil, suggestedContacts

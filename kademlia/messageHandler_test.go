@@ -11,7 +11,8 @@ func TestHandleMessage(t *testing.T) {
 	// Create a new network
 	sender := NewContact(NewKademliaID("1111111100000000000000000000000000000000"), "localhost:8001")
 	target := NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8002")
-	network := NewNetwork(target)
+	target_node := NewKademlia(target, false)
+	network := NewNetwork(target, target_node)
 
 	// Create a new message
 

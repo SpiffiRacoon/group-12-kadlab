@@ -1,8 +1,6 @@
 package kademlia
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -20,8 +18,9 @@ type Message struct {
 	Sender  Contact
 }
 
-func NewNetwork(me Contact) *Network {
+func NewNetwork(me Contact, kademlia *Kademlia) *Network {
 	network := &Network{}
+	network.kademlia = kademlia
 	network.Me = me
 	network.RoutingTable = *NewRoutingTable(me)
 	return network
@@ -113,8 +112,9 @@ func (network *Network) SendJoinMessage(contact *Contact) error {
 		Content: network.Me.ID.String(),
 		Sender:  network.Me,
 	}
-
+	fmt.Println("Test1")
 	responseMsg, err := network.sendMessage(msg, contact)
+	fmt.Println("Test2")
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
 		return err
@@ -207,11 +207,4 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 		return nil
 	}
 
-}
-
-func (network *Network) storeAtOtherNode(data []byte, target *Contact) {
-	sha1 := sha1.Sum(data) //hashes the data
-	key := hex.EncodeToString(sha1[:])
-	network.SendStoreMessage(data, key, target)
-	//Do something with the store response?
 }

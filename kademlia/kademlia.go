@@ -18,11 +18,12 @@ type Kademlia struct {
 }
 
 func NewKademlia(me Contact, isBootstrap bool) *Kademlia {
-	kademlia := &Kademlia{}
+	kademlia := Kademlia{}
 	kademlia.Me = me
-	kademlia.Network = *NewNetwork(me)
+	kademlia.Network = *NewNetwork(me, &kademlia)
 	kademlia.IsBootstrap = isBootstrap
-	return kademlia
+	kademlia.DataStorage = make(map[string][]byte)
+	return &kademlia
 }
 
 func (kademlia *Kademlia) Start() {
@@ -167,9 +168,9 @@ func (kademlia *Kademlia) LookupData(hash string) []byte {
 	return nil
 }
 
-func (kademlia *Kademlia) ExtractData(hash string) (data []byte) {
-	res := kademlia.DataStorage[hash]
-	return res
+func (kademlia *Kademlia) ExtractData(hash string) (data []byte, exists bool) {
+	val, exists := kademlia.DataStorage[hash]
+	return val, exists
 }
 
 func (kademlia *Kademlia) Store(data []byte) error {
@@ -182,7 +183,8 @@ func (kademlia *Kademlia) Store(data []byte) error {
 		kademlia.LocalStorage(data, key)
 		return nil
 	} else {
-		kademlia.Network.storeAtOtherNode(data, &contacts[0])
+		fmt.Println(contacts[0])
+		kademlia.Network.SendStoreMessage(data, key, &contacts[0])
 		return nil
 	}
 }
