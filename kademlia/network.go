@@ -112,9 +112,7 @@ func (network *Network) SendJoinMessage(contact *Contact) error {
 		Content: network.Me.ID.String(),
 		Sender:  network.Me,
 	}
-	fmt.Println("Test1")
 	responseMsg, err := network.sendMessage(msg, contact)
-	fmt.Println("Test2")
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
 		return err
