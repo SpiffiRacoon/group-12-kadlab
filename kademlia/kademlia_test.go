@@ -11,7 +11,7 @@ import (
 func TestKademlia(t *testing.T) {
 	bootstrapContact := NewContact(NewKademliaID("B0075712A9000000000000000000000000000000"), "localhost:3100")
 	contact := NewContact(NewKademliaID("1111111100000000000000000000000000000000"), "localhost:3101")
-	
+
 	bootstrap := NewKademlia(bootstrapContact, true)
 	assert.Equal(t, bootstrap.Me.ID, bootstrapContact.ID)
 	assert.Equal(t, bootstrap.Me.Address, bootstrapContact.Address)
@@ -36,5 +36,16 @@ func TestKademlia(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 3, len(contacts))
 		fmt.Println(contacts)
+	})
+
+	t.Run("Test Store", func(t *testing.T) {
+		stored := node.Store([]byte("TestingTesting"))
+		assert.Nil(t, stored)
+	})
+
+	t.Run("Test LookupData", func(t *testing.T) {
+
+		dataRes := node.LookupData(node.hashValue([]byte("TestingTesting")))
+		assert.NotNil(t, dataRes)
 	})
 }

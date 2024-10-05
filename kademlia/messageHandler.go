@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"reflect"
 	"strings"
 )
 
@@ -55,22 +54,8 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 	case "FIND_VALUE":
 		fmt.Println("Received FIND_VALUE from ", msg.Sender)
 		target := msg.Content
-		data, contacts := network.handleFindDataMessage(target)
-		if data == nil {
-			contactsBytes, err := json.Marshal(contacts)
-			if err != nil {
-				fmt.Println("Error marshalling contacts")
-				return nil, err
-			}
-			return contactsBytes, nil
-		}
-
-		dataBytes, err := json.Marshal(data)
-		if err != nil {
-			fmt.Println("Error marshalling data")
-			return nil, err
-		}
-		return dataBytes, nil
+		resp, err := network.handleFindDataMessage(target)
+		return resp, err
 	default:
 		return nil, errors.New("Unknown message type: " + msg.MsgType)
 	}
@@ -101,7 +86,6 @@ func (network *Network) handleFindContactMessage(target *KademliaID, count int) 
 
 func (network *Network) handleStoreMessage(content string) Message {
 	splitContent := strings.Split(content, ";")
-	fmt.Println(reflect.TypeOf(splitContent[0]), splitContent[0])
 	_, exists := network.kademlia.ExtractData(splitContent[0])
 	if exists {
 		errMsg := Message{
@@ -119,13 +103,15 @@ func (network *Network) handleStoreMessage(content string) Message {
 	}
 }
 
-func (network *Network) handleFindDataMessage(content string) ([]byte, []Contact) {
-	splitContent := strings.Split(content, ";")
-	val, exists := network.kademlia.ExtractData(splitContent[0])
+func (network *Network) handleFindDataMessage(key string) ([]byte, error) {
+	val, exists := network.kademlia.ExtractData(key)
 	if exists {
-		return val, nil
+		res, err := json.Marshal(string(val))
+		return res, err
+
 	} else {
 		suggestedContacts := network.RoutingTable.FindClosestContacts(network.RoutingTable.me.ID, 5)
-		return nil, suggestedContacts
+		res, err := json.Marshal(suggestedContacts)
+		return res, err
 	}
 }

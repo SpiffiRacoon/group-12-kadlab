@@ -174,8 +174,7 @@ func (kademlia *Kademlia) ExtractData(hash string) (data []byte, exists bool) {
 }
 
 func (kademlia *Kademlia) Store(data []byte) error {
-	sha1 := sha1.Sum(data) //hashes the data
-	key := hex.EncodeToString(sha1[:])
+	key := kademlia.hashValue(data)
 	location := NewKademliaID(key)
 	contacts, _ := kademlia.LookupContact(location)
 
@@ -191,4 +190,10 @@ func (kademlia *Kademlia) Store(data []byte) error {
 
 func (kademlia *Kademlia) LocalStorage(data []byte, key string) {
 	kademlia.DataStorage[key] = data
+}
+
+func (kademlia *Kademlia) hashValue(value []byte) string {
+	sha1 := sha1.Sum(value) //hashes the data
+	key := hex.EncodeToString(sha1[:])
+	return key
 }

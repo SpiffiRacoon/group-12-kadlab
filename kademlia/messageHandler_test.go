@@ -84,19 +84,18 @@ func TestHandleMessage(t *testing.T) {
 		respData, err := network.HandleMessage(data, nil)
 		assert.Nil(t, err)
 		assert.NotNil(t, respData)
-
 	})
 
 	t.Run("Test FIND_VALUE message", func(t *testing.T) {
 		msg := Message{
 			MsgType: "FIND_VALUE",
-			Content: "Hello World",
+			Content: "Hello",
 			Sender:  sender,
 		}
 		data, _ := json.Marshal(msg)
 		respData, err := network.HandleMessage(data, nil)
 		assert.Nil(t, err)
-		assert.Nil(t, respData)
+		assert.NotNil(t, respData)
 		//TODO check responseData
 	})
 
