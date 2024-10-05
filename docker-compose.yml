@@ -5,7 +5,7 @@
 # command line flags, in order to actually get any replicas started. That
 # command requires that a docker swarm is already running in order to function.
 
-version: "3"
+#version: "3"
 services:
   kademliaNodes:
     image: kadlab:latest # Make sure your Docker image has this name.
@@ -13,7 +13,7 @@ services:
     tty: true
     deploy:
       mode: replicated
-      replicas: 50  
+      replicas: 50
       resources:
         limits:
           cpus: "0.1"
@@ -37,7 +37,7 @@ services:
       - kademlia_network
 
   bootstrapNode:
-    image: kadlab:latest 
+    image: kadlab:latest
     stdin_open: true
     tty: true
     deploy:
@@ -64,5 +64,4 @@ services:
 
 networks:
   kademlia_network:
-    driver:
-      bridge
+    driver: bridge
