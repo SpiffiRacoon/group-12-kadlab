@@ -77,30 +77,43 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 func (kademlia *Kademlia) PopulateNetwork() {
 	fmt.Println("Populating the network...")
 
-	queriedNodes := []Contact{kademlia.Me}
+	queriedNodes := []Contact{kademlia.Me} // Track nodes already contacted
 
-	// Define the number of random IDs to search for and populate the network with
-	for i := 0; i < IDLength*8; i++ { //2*i+1 Results in 8 iterations
+	// Iterate over all buckets to generate random IDs and populate the network
+	for i := 0; i < IDLength*8; i++ { 
 		id := kademlia.Network.RoutingTable.GenerateIDForBucket(i)
-		contacts, err := kademlia.LookupContact(id)
+		contacts, err := kademlia.LookupContact(id)  // Find contacts closest to the generated ID
 		if err != nil {
 			fmt.Println("Error finding contacts during network population")
 			continue
 		}
 
-		for _, contact := range contacts { //TODO: still contacts same mode multiple times?
+		fmt.Println("Looping through contacts")
+		for _, contact := range contacts {
+			// Check if the contact has already been queried
 			if containsContact(queriedNodes, contact) {
+				fmt.Println("Already queried contact: ", contact)
 				continue
 			}
+
+			// Add contact to queried list before pinging to avoid repeat queries
 			queriedNodes = append(queriedNodes, contact)
+
+			// Send a ping to check if the contact is reachable
 			err = kademlia.Network.SendPingMessage(&contact)
 			if err != nil {
-				fmt.Println("Error pinging contact during network population, node may be down")
-			}else {
-				kademlia.Network.RoutingTable.AddContact(contact)
-				kademlia.Network.SendJoinMessage(&contact)
+				fmt.Println("Error pinging contact, node may be down")
+				continue
+			}
+
+			// If ping successful, add contact to routing table and send join message
+			kademlia.Network.RoutingTable.AddContact(contact)
+			err = kademlia.Network.SendJoinMessage(&contact)
+			if err != nil {
+				fmt.Println("Error sending join message")
 			}
 		}
+
 		fmt.Printf("Found %d contacts for Bucket %d\n", len(contacts), i)
 	}
 
@@ -161,7 +174,7 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
 
 func containsContact(list []Contact, current Contact) bool {
 	for _, i := range list {
-		if i.ID == current.ID {
+		if i.ID.Equals(current.ID) {
 			return true
 		}
 	}
