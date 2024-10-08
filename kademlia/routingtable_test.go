@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -51,7 +50,6 @@ func TestRoutingTable(t *testing.T) {
 			id := rt.GenerateIDForBucket(i)
 			bucket := rt.getBucketIndex(id)
 			assert.Equal(t, i, bucket)
-			fmt.Println("Generated ID: ", id)
 		}
 	})
 }
