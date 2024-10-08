@@ -160,14 +160,14 @@ func (network *Network) SendFindDataMessage(hash string, contact *Contact) (stri
 	}
 	response, err := network.sendMessage(msg, contact)
 	if err != nil {
-		fmt.Println("Error during SendMessage")
+		fmt.Println("Error during FIND_VALUE SendMessage")
 		return "", nil
 	}
 	var suggestedContacts []Contact
 	var dataResponse string
 	err = json.Unmarshal(response, &dataResponse)
 	if err != nil {
-		fmt.Println("Error during unmarshalling")
+		fmt.Println("Error during FIND_VALUE unmarshalling")
 		return "", nil
 	} else if dataResponse == "" {
 		//Case: if no data is found it acts like a FIND_NODE-response
@@ -195,7 +195,7 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 		var storeResponse Message
 		err := json.Unmarshal(responseMsg, &storeResponse)
 		if err != nil {
-			fmt.Println("Error during unmarshalling")
+			fmt.Println("Error during STORE unmarshalling")
 			return err
 		}
 		if storeResponse.MsgType != "STORED" {

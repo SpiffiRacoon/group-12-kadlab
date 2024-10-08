@@ -45,7 +45,10 @@ func TestKademlia(t *testing.T) {
 
 	t.Run("Test LookupData", func(t *testing.T) {
 
-		dataRes := node.LookupData(node.hashValue([]byte("TestingTesting")))
+		dataRes := node.LookupData(node.MakeKey([]byte("TestingTesting")))
+		fmt.Print(string(dataRes))
 		assert.NotNil(t, dataRes)
+		anotherDataRes := node.LookupData(node.MakeKey([]byte("SkaInteFinnas")))
+		assert.Nil(t, anotherDataRes)
 	})
 }

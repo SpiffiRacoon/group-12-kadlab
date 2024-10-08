@@ -143,9 +143,9 @@ func removeFromList(list []Contact, current Contact) []Contact {
 	return list
 }
 
-func (kademlia *Kademlia) LookupData(hash string) []byte {
-	if kademlia.DataStorage[hash] != nil {
-		return kademlia.DataStorage[hash]
+func (kademlia *Kademlia) LookupData(key string) []byte {
+	if kademlia.DataStorage[key] != nil {
+		return kademlia.DataStorage[key]
 	}
 	contacts := kademlia.Network.RoutingTable.FindClosestContacts(kademlia.Network.RoutingTable.me.ID, 5)
 	var queriedContacts []Contact
@@ -154,17 +154,18 @@ func (kademlia *Kademlia) LookupData(hash string) []byte {
 		//if new node, add it to list of queried nodes
 		if !containsContact(queriedContacts, contact) {
 			queriedContacts = append(queriedContacts, contact)
-			response, newNodes := kademlia.Network.SendFindDataMessage(hash, &contact)
+			response, newNodes := kademlia.Network.SendFindDataMessage(key, &contact)
 			//If response is empty then it has gotten suggested nodes from SendFindDataMessage which should be queried in later iterations
 			if response == "" {
 				contacts = append(contacts, newNodes...)
 			} else {
+				//if the response is not empty, the key has been found
 				return []byte(response)
 			}
 		}
 
 	}
-	//Case: hash value not found
+	//Case: key not found
 	return nil
 }
 
@@ -174,25 +175,24 @@ func (kademlia *Kademlia) ExtractData(hash string) (data []byte, exists bool) {
 }
 
 func (kademlia *Kademlia) Store(data []byte) error {
-	key := kademlia.hashValue(data)
+	key := kademlia.MakeKey(data)
 	location := NewKademliaID(key)
 	contacts, _ := kademlia.LookupContact(location)
 
-	if contacts[0].ID == kademlia.Network.RoutingTable.me.ID {
-		kademlia.LocalStorage(data, key)
-		return nil
-	} else {
-		fmt.Println(contacts[0])
-		kademlia.Network.SendStoreMessage(data, key, &contacts[0])
-		return nil
+	if len(contacts) == 0 {
+		return fmt.Errorf("no contacts found for key %s", key)
 	}
+	for _, contact := range contacts {
+		kademlia.Network.SendStoreMessage(data, key, &contact)
+	}
+	return nil
 }
 
 func (kademlia *Kademlia) LocalStorage(data []byte, key string) {
 	kademlia.DataStorage[key] = data
 }
 
-func (kademlia *Kademlia) hashValue(value []byte) string {
+func (kademlia *Kademlia) MakeKey(value []byte) string {
 	sha1 := sha1.Sum(value) //hashes the data
 	key := hex.EncodeToString(sha1[:])
 	return key
