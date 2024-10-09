@@ -44,5 +44,13 @@ func TestRoutingTable(t *testing.T) {
 			assert.Equal(t, contacts2[i], contacts3[i])
 		}
 	})
+
+	t.Run("Test GenerateIDForBucket", func(t *testing.T) {
+		for i := 0; i < IDLength*8; i=2*i+1 {
+			id := rt.GenerateIDForBucket(i)
+			bucket := rt.getBucketIndex(id)
+			assert.Equal(t, i, bucket)
+		}
+	})
 }
 

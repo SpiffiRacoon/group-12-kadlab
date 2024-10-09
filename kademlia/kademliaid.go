@@ -67,3 +67,9 @@ func (kademliaID KademliaID) CalcDistance(target *KademliaID) *KademliaID {
 func (kademliaID *KademliaID) String() string {
 	return hex.EncodeToString(kademliaID[0:IDLength])
 }
+
+func (id *KademliaID) Copy() *KademliaID {
+    newID := KademliaID{}
+    copy(newID[:], id[:]) // Use copy to duplicate the ID's content
+    return &newID
+}

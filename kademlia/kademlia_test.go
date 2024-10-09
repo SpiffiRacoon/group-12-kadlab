@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -35,7 +34,6 @@ func TestKademlia(t *testing.T) {
 		contacts, err := node.LookupContact(NewKademliaID("B0075712A9000000000000000000000000000000"))
 		assert.Nil(t, err)
 		assert.Equal(t, 3, len(contacts))
-		fmt.Println(contacts)
 	})
 
 	t.Run("Test Store", func(t *testing.T) {
