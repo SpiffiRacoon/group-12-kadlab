@@ -41,6 +41,8 @@ func Kcli(input string, node *kademlia.Kademlia) {
 			} else {
 				fmt.Println("This comman needs one additional arguments")
 			}
+		case "print":
+			node.Network.RoutingTable.PrintRoutingTable()
 		case "exit":
 			fmt.Println("shutting down node...")
 			os.Exit(0)

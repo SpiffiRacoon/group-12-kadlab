@@ -46,7 +46,7 @@ func main() {
 	}
 
 	contact := kademlia.NewContact(kademlia.NewRandomKademliaID(), localIP+":"+NodePort)
-	fmt.Println(contact.String())
+	fmt.Println("Me: " + contact.String())
 	fmt.Println("BootstrapIP: " + bootstrapIP) // TODO: remove
 
 	node := kademlia.NewKademlia(contact, IS_BOOTSTRAP)
