@@ -77,7 +77,7 @@ func (routingTable *RoutingTable) GenerateIDForBucket(bucketIndex int) *Kademlia
 	byteIndex := bucketIndex / 8
 	bitIndex := bucketIndex % 8
 
-	newID[byteIndex] ^= 1 << uint8(7-bitIndex) 
+	newID[byteIndex] ^= 1 << uint8(7-bitIndex)
 
 	return newID
 }

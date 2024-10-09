@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
