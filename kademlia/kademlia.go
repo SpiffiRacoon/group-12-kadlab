@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -67,6 +68,10 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 
 	fmt.Println("Network joined.")
 	kademlia.PopulateNetwork()
+	kademlia.Network.RoutingTable.PrintRoutingTable()
+
+	time.Sleep(20 * time.Second)
+	kademlia.Network.RoutingTable.PrintRoutingTable()
 }
 
 func (kademlia *Kademlia) PopulateNetwork() {
@@ -93,40 +98,51 @@ func (kademlia *Kademlia) PopulateNetwork() {
 }
 
 func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
-	k := 3
+	k := 3     // Number of closest nodes to query (bucket size)
+	alpha := 3 // Degree of parallelism (number of nodes to query in each iteration)
 	closestNodes := kademlia.Network.RoutingTable.FindClosestContacts(target, k)
 
 	queriedNodes := []Contact{}
+	foundCloser := true
 
-	for _, node := range closestNodes {
-		if containsContact(queriedNodes, node) {
-			break
-		}
+	for foundCloser {
+		foundCloser = false
 
-		queriedNodes = append(queriedNodes, node)
+		for i := 0; i < len(closestNodes) && i < alpha; i++ {
+			node := closestNodes[i]
 
-		newNodes, err := kademlia.Network.SendFindContactMessage(&node, target)
-		if err != nil {
-			// If the node is not responding, remove it from our closestNodes list
-			closestNodes = removeFromList(closestNodes, node)
-			continue
-		}
+			if containsContact(queriedNodes, node) {
+				continue
+			}
 
-		closestNodes = append(closestNodes, newNodes...)
+			queriedNodes = append(queriedNodes, node)
 
-		if len(closestNodes) > k {
-			closestNodes = closestNodes[:k]
+			newNodes, err := kademlia.Network.SendFindContactMessage(&node, target)
+			if err != nil {
+				closestNodes = removeFromList(closestNodes, node)
+				continue
+			}
+
+			closestNodes = append(closestNodes, newNodes...)
+
+			sort.Slice(closestNodes, func(i, j int) bool {
+				return closestNodes[i].ID.CalcDistance(target).Less(closestNodes[j].ID.CalcDistance(target))
+			})
+
+			if len(closestNodes) > k {
+				closestNodes = closestNodes[:k]
+			}
+
+			foundCloser = true
 		}
 	}
-
-	//TODO: sort the contacts?
 
 	return closestNodes, nil
 }
 
 func containsContact(list []Contact, current Contact) bool {
 	for _, i := range list {
-		if i.ID == current.ID {
+		if i.ID.Equals(current.ID) {
 			return true
 		}
 	}
@@ -143,30 +159,41 @@ func removeFromList(list []Contact, current Contact) []Contact {
 	return list
 }
 
-func (kademlia *Kademlia) LookupData(key string) []byte {
+func (kademlia *Kademlia) LookupData(key string) ([]byte, bool) {
+	k := 3     // Number of closest nodes to query (bucket size)
+	alpha := 3 // Degree of parallelism (number of nodes to query in each iteration)
 	if kademlia.DataStorage[key] != nil {
-		return kademlia.DataStorage[key]
+		return kademlia.DataStorage[key], true
 	}
-	contacts := kademlia.Network.RoutingTable.FindClosestContacts(kademlia.Network.RoutingTable.me.ID, 5)
+	closestContacts := kademlia.Network.RoutingTable.FindClosestContacts(kademlia.Network.RoutingTable.me.ID, k)
 	var queriedContacts []Contact
+	foundCloser := true
 
-	for _, contact := range contacts {
-		//if new node, add it to list of queried nodes
-		if !containsContact(queriedContacts, contact) {
-			queriedContacts = append(queriedContacts, contact)
-			response, newNodes := kademlia.Network.SendFindDataMessage(key, &contact)
-			//If response is empty then it has gotten suggested nodes from SendFindDataMessage which should be queried in later iterations
-			if response == "" {
-				contacts = append(contacts, newNodes...)
-			} else {
-				//if the response is not empty, the key has been found
-				return []byte(response)
+	for foundCloser {
+		foundCloser = false
+		for i := 0; i < len(closestContacts) && i < alpha; i++ {
+			contact := closestContacts[i]
+			//if new node, add it to list of queried nodes
+			if containsContact(queriedContacts, contact) {
+				continue
 			}
+			queriedContacts = append(queriedContacts, contact)
+			value, newContacts := kademlia.Network.SendFindDataMessage(key, &contact)
+			if value != "" {
+				return []byte(value), true
+			}
+			closestContacts = append(closestContacts, newContacts...)
+			sort.Slice(closestContacts, func(i, j int) bool {
+				return closestContacts[i].ID.CalcDistance(kademlia.Network.RoutingTable.me.ID).Less(closestContacts[j].ID.CalcDistance(kademlia.Network.RoutingTable.me.ID))
+			})
+			if len(closestContacts) > k {
+				closestContacts = closestContacts[:k]
+			}
+			foundCloser = true
 		}
-
 	}
 	//Case: key not found
-	return nil
+	return nil, false
 }
 
 func (kademlia *Kademlia) ExtractData(hash string) (data []byte, exists bool) {
@@ -174,18 +201,21 @@ func (kademlia *Kademlia) ExtractData(hash string) (data []byte, exists bool) {
 	return val, exists
 }
 
-func (kademlia *Kademlia) Store(data []byte) error {
+func (kademlia *Kademlia) Store(data []byte) (string, error) {
 	key := kademlia.MakeKey(data)
 	location := NewKademliaID(key)
 	contacts, _ := kademlia.LookupContact(location)
-
 	if len(contacts) == 0 {
-		return fmt.Errorf("no contacts found for key %s", key)
+		return "", fmt.Errorf("no contacts found")
 	}
 	for _, contact := range contacts {
-		kademlia.Network.SendStoreMessage(data, key, &contact)
+		fmt.Println("Storing data at: ", location.String(), " on node: ", contact.Address)
+		err := kademlia.Network.SendStoreMessage(data, key, &contact)
+		if err != nil {
+			return "", err
+		}
 	}
-	return nil
+	return key, nil
 }
 
 func (kademlia *Kademlia) LocalStorage(data []byte, key string) {

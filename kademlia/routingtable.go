@@ -1,7 +1,8 @@
 package kademlia
 
-const bucketSize = 20
+import "fmt"
 
+const bucketSize = 20
 
 // RoutingTable definition
 // keeps a refrence contact of me and an array of buckets
@@ -68,4 +69,20 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 	}
 
 	return IDLength*8 - 1
+}
+
+func (routingTable *RoutingTable) PrintRoutingTable() {
+	count := 0
+	for i := 0; i < IDLength*8; i++ {
+		bucket := routingTable.buckets[i]
+		if bucket.Len() != 0 {
+			fmt.Println("Bucket: ", i)
+		}
+		for elt := bucket.list.Front(); elt != nil; elt = elt.Next() {
+			contact := elt.Value.(Contact)
+			fmt.Println("Contact: ", contact)
+			count++
+		}
+	}
+	fmt.Println("Total contacts: ", count)
 }

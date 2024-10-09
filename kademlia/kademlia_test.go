@@ -39,16 +39,19 @@ func TestKademlia(t *testing.T) {
 	})
 
 	t.Run("Test Store", func(t *testing.T) {
-		stored := node.Store([]byte("TestingTesting"))
-		assert.Nil(t, stored)
+		stored, err := node.Store([]byte("TestingTesting"))
+		assert.Equal(t, node.MakeKey([]byte("TestingTesting")), stored)
+		assert.Nil(t, err)
 	})
 
 	t.Run("Test LookupData", func(t *testing.T) {
 
-		dataRes := node.LookupData(node.MakeKey([]byte("TestingTesting")))
-		fmt.Print(string(dataRes))
+		dataRes, exists := node.LookupData(node.MakeKey([]byte("TestingTesting")))
 		assert.NotNil(t, dataRes)
-		anotherDataRes := node.LookupData(node.MakeKey([]byte("SkaInteFinnas")))
+		assert.True(t, exists)
+		fmt.Println(string(dataRes))
+		anotherDataRes, exists := node.LookupData(node.MakeKey([]byte("SkaInteFinnas")))
 		assert.Nil(t, anotherDataRes)
+		assert.False(t, exists)
 	})
 }

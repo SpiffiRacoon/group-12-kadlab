@@ -167,12 +167,14 @@ func (network *Network) SendFindDataMessage(hash string, contact *Contact) (stri
 	var dataResponse string
 	err = json.Unmarshal(response, &dataResponse)
 	if err != nil {
-		fmt.Println("Error during FIND_VALUE unmarshalling")
-		return "", nil
-	} else if dataResponse == "" {
 		//Case: if no data is found it acts like a FIND_NODE-response
-		json.Unmarshal(response, &suggestedContacts)
-		return "", suggestedContacts
+		err2 := json.Unmarshal(response, &suggestedContacts)
+		if err2 != nil {
+			fmt.Println("Error during FIND_VALUE unmarshalling")
+			return "", nil
+		} else {
+			return "", suggestedContacts
+		}
 	} else {
 		//Case: Corresponding value is present, return data
 		return dataResponse, nil

@@ -77,7 +77,7 @@ func TestHandleMessage(t *testing.T) {
 	t.Run("Test STORE message", func(t *testing.T) {
 		msg := Message{
 			MsgType: "STORE",
-			Content: "Hello;World",
+			Content: network.kademlia.MakeKey([]byte("Hello World")) + ";" + "Hello World",
 			Sender:  sender,
 		}
 		data, _ := json.Marshal(msg)
@@ -89,14 +89,16 @@ func TestHandleMessage(t *testing.T) {
 	t.Run("Test FIND_VALUE message", func(t *testing.T) {
 		msg := Message{
 			MsgType: "FIND_VALUE",
-			Content: "Hello",
+			Content: network.kademlia.MakeKey([]byte("Hello World")),
 			Sender:  sender,
 		}
 		data, _ := json.Marshal(msg)
 		respData, err := network.HandleMessage(data, nil)
 		assert.Nil(t, err)
-		assert.NotNil(t, respData)
-		//TODO check responseData
+		assert.Equal(t, []byte("\"Hello World\""), respData)
+		//TODO, fixa så messageHandlern returnerar utan backslashes(läggs till i samband med marshallingen)
+		//Fixa assert för att kolla antalet kontakter som skickas tillbaka om värdet ej finns i nuvarande nod
+		//Fundera på hur vi vill att kontakter skickas tillbaka, är det vettigt med bytearray eller måste det vara en contact array?
 	})
 
 	t.Run("Test unknown message", func(t *testing.T) {

@@ -1,8 +1,6 @@
 package kademlia
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -65,10 +63,16 @@ func TestNetwork(t *testing.T) {
 	//TODO: Implement this test
 	t.Run("Test SendStoreMessage", func(t *testing.T) {
 		//Result: data is stored in contact2's routing table
-		sha1 := sha1.Sum([]byte("data"))
-		key := hex.EncodeToString(sha1[:])
+		key := node1.MakeKey([]byte("data"))
 		response := network1.SendStoreMessage([]byte("data"), key, &contact2)
 		assert.Nil(t, response)
+	})
+
+	t.Run("Test SendFindDataMessage", func(t *testing.T) {
+		key := node1.MakeKey([]byte("data"))
+		response, err := network1.SendFindDataMessage(key, &contact2)
+		assert.Nil(t, err)
+		assert.Equal(t, []byte("data"), response)
 	})
 
 }
