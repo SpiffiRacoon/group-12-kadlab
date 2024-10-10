@@ -16,6 +16,9 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 		return nil, err
 	}
 
+	//adding the sender to the routing table
+	network.RoutingTable.AddContact(msg.Sender)
+
 	switch msg.MsgType {
 	case "PING":
 		response := network.handlePingMessage()
