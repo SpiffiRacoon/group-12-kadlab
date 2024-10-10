@@ -55,11 +55,17 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 	fmt.Println("Joining network...")
 	time.Sleep(2 * time.Second)
 
+	err := kademlia.Network.SendPingMessage(knownNode)
+	if err != nil {
+		fmt.Println("Error pinging known node, no known node to join network with, error: ", err)
+		return
+	}
+
 	kademlia.Network.RoutingTable.AddContact(*knownNode)
-	kademlia.Network.SendJoinMessage(knownNode)
+	//kademlia.Network.SendJoinMessage(knownNode)
 	contacts, err := kademlia.LookupContact(kademlia.Me.ID)
 	if err != nil {
-		fmt.Println("Error finding contacts")
+		fmt.Println("Error finding contacts, err: ", err)
 		return
 	}
 
@@ -80,11 +86,11 @@ func (kademlia *Kademlia) PopulateNetwork() {
 
 	queriedNodes := []Contact{kademlia.Me}
 
-	for i := 0; i < IDLength*8; i = 2*i+1 { //Results in 8 iterations
+	for i := 0; i < IDLength*8; i = i+1 { //Results in 8 iterations
 		id := kademlia.Network.RoutingTable.GenerateIDForBucket(i)
 		contacts, err := kademlia.LookupContact(id)
 		if err != nil {
-			fmt.Println("Error finding contacts during network population")
+			fmt.Println("Error finding contacts during network population, err: ", err)
 			continue
 		}
 
@@ -97,15 +103,11 @@ func (kademlia *Kademlia) PopulateNetwork() {
 
 			err = kademlia.Network.SendPingMessage(&contact)
 			if err != nil {
-				fmt.Println("Error pinging contact, node may be down")
+				fmt.Println("Error pinging contact, err: ", err)
 				continue
 			}
 
 			kademlia.Network.RoutingTable.AddContact(contact)
-			err = kademlia.Network.SendJoinMessage(&contact)
-			if err != nil {
-				fmt.Println("Error sending join message")
-			}
 		}
 	}
 
@@ -222,7 +224,7 @@ func (kademlia *Kademlia) Store(data []byte) (string, error) {
 	location := NewKademliaID(key)
 	contacts, _ := kademlia.LookupContact(location)
 	if len(contacts) == 0 {
-		return "", fmt.Errorf("no contacts found")
+		return "", fmt.Errorf("No contacts found")
 	}
 	for _, contact := range contacts {
 		fmt.Println("Storing data at: ", location.String(), " on node: ", contact.Address)
