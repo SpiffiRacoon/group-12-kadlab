@@ -70,9 +70,8 @@ func TestNetwork(t *testing.T) {
 
 	t.Run("Test SendFindDataMessage", func(t *testing.T) {
 		key := node1.MakeKey([]byte("data"))
-		response, err := network1.SendFindDataMessage(key, &contact2)
-		assert.Nil(t, err)
-		assert.Equal(t, []byte("data"), response)
+		response, _ := network1.SendFindDataMessage(key, &contact2)
+		assert.Equal(t, "data", response)
 	})
 
 }
