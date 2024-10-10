@@ -6,24 +6,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestNetwork(t *testing.T) {
 	contact1 := NewContact(NewKademliaID("1000000000000000000000000000000000000000"), "localhost:8001")
-	network1 := NewNetwork(contact1)
+	node1 := NewKademlia(contact1, false)
+	network1 := NewNetwork(contact1, node1)
 
 	contact2 := NewContact(NewKademliaID("2000000000000000000000000000000000000000"), "localhost:8002")
-	network2 := NewNetwork(contact2)
+	node2 := NewKademlia(contact2, false)
+	network2 := NewNetwork(contact2, node2)
 
 	contact3 := NewContact(NewKademliaID("3000000000000000000000000000000000000000"), "localhost:8003")
 
-
 	t.Run("Test Listen", func(t *testing.T) {
-		go func (){
+		go func() {
 			err := network2.Listen("0.0.0.0", 8002)
 			assert.Nil(t, err)
 		}()
 	})
-
 
 	t.Run("Test SendPingMessage", func(t *testing.T) {
 		err := network1.SendPingMessage(&contact2)
@@ -62,15 +61,18 @@ func TestNetwork(t *testing.T) {
 		assert.NotContains(t, contacts, contact3)
 	})
 
-	/*
 	//TODO: Implement this test
-	t.Run("Test SendStoreDataMessage", func(t *testing.T) {
+	t.Run("Test SendStoreMessage", func(t *testing.T) {
 		//Result: data is stored in contact2's routing table
-		sha1 := sha1.Sum([]byte("data"))
-		key := hex.EncodeToString(sha1[:])
+		key := node1.MakeKey([]byte("data"))
 		response := network1.SendStoreMessage([]byte("data"), key, &contact2)
-		assert.True(t, response)
+		assert.Nil(t, response)
 	})
-	*/
-}
 
+	t.Run("Test SendFindDataMessage", func(t *testing.T) {
+		key := node1.MakeKey([]byte("data"))
+		response, _ := network1.SendFindDataMessage(key, &contact2)
+		assert.Equal(t, "data", response)
+	})
+
+}

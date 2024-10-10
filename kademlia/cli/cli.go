@@ -36,8 +36,8 @@ func Kcli(input string, node *kademlia.Kademlia) {
 			}
 		case "get":
 			if len(commandNdata) == 2 {
-				recvData := node.LookupData(commandNdata[1])
-				print(recvData)
+				recvData, _ := node.LookupData(commandNdata[1])
+				print(string(recvData))
 			} else {
 				fmt.Println("This comman needs one additional arguments")
 			}

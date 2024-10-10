@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 )
 
 func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) ([]byte, error) {
@@ -42,14 +43,22 @@ func (network *Network) HandleMessage(rawMsg []byte, recieverAddr *net.UDPAddr) 
 		}
 		return contactsBytes, nil
 	case "STORE":
-		fmt.Println("Received STORE from ", msg.Sender, "NOT IMPLEMENTED")
-		network.handleStoreMessage()
+		fmt.Println("Received STORE from ", msg.Sender)
+		response := network.handleStoreMessage(msg.Content)
+		responseBytes, err := json.Marshal(response)
+		if err != nil {
+			fmt.Println("Error marshalling response")
+			return nil, err
+		}
+		return responseBytes, nil
 	case "FIND_VALUE":
-		fmt.Println("Received FIND_VALUE from ", msg.Sender, "NOT IMPLEMENTED")
+		fmt.Println("Received FIND_VALUE from ", msg.Sender)
+		target := msg.Content
+		resp, err := network.handleFindDataMessage(target)
+		return resp, err
 	default:
 		return nil, errors.New("Unknown message type: " + msg.MsgType)
 	}
-	return nil, nil
 }
 
 func (network *Network) handlePingMessage() Message {
@@ -75,10 +84,34 @@ func (network *Network) handleFindContactMessage(target *KademliaID, count int) 
 	return contacts
 }
 
-func (network *Network) handleStoreMessage() Message {
-	storedmsg := Message{
-		MsgType: "STORED",
-		Content: "Data stored successfully on node",
+func (network *Network) handleStoreMessage(content string) Message {
+	splitContent := strings.Split(content, ";")
+	_, exists := network.kademlia.ExtractData(splitContent[0])
+	if exists {
+		errMsg := Message{
+			MsgType: "ERROR_STORE",
+			Content: "Store location is occupied",
+		}
+		return errMsg
+	} else {
+		network.kademlia.LocalStorage([]byte(splitContent[1]), splitContent[0])
+		storedMsg := Message{
+			MsgType: "STORED",
+			Content: "Data stored successfully on node",
+		}
+		return storedMsg
 	}
-	return storedmsg
+}
+
+func (network *Network) handleFindDataMessage(key string) ([]byte, error) {
+	val, exists := network.kademlia.ExtractData(key)
+	if exists {
+		res, err := json.Marshal(string(val))
+		return res, err
+
+	} else {
+		suggestedContacts := network.RoutingTable.FindClosestContacts(network.RoutingTable.me.ID, 5)
+		res, err := json.Marshal(suggestedContacts)
+		return res, err
+	}
 }
