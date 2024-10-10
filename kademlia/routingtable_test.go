@@ -16,7 +16,7 @@ func TestRoutingTable(t *testing.T) {
 	contact4 := NewContact(NewKademliaID("4000000000000000000000000000000000000000"), "localhost:8000")
 	contact5 := NewContact(NewKademliaID("5000000000000000000000000000000000000000"), "localhost:8000")
 	contact6 := NewContact(NewKademliaID("6000000000000000000000000000000000000000"), "localhost:8000")
-	rt := NewRoutingTable(contact1)
+	rt := NewRoutingTable(contact1, nil)
 	rt.AddContact(contact2)
 	rt.AddContact(contact3)
 	rt.AddContact(contact4)

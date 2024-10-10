@@ -22,7 +22,7 @@ func NewNetwork(me Contact, kademlia *Kademlia) *Network {
 	network := &Network{}
 	network.kademlia = kademlia
 	network.Me = me
-	network.RoutingTable = *NewRoutingTable(me)
+	network.RoutingTable = *NewRoutingTable(me, network)
 	return network
 }
 

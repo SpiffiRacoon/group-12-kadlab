@@ -8,12 +8,14 @@ import (
 // contains a List
 type bucket struct {
 	list *list.List
+	network *Network
 }
 
 // newBucket returns a new instance of a bucket
-func newBucket() *bucket {
+func newBucket(network *Network) *bucket {
 	bucket := &bucket{}
 	bucket.list = list.New()
+	bucket.network = network
 	return bucket
 }
 
@@ -32,6 +34,13 @@ func (bucket *bucket) AddContact(contact Contact) {
 	if element == nil {
 		if bucket.list.Len() < bucketSize {
 			bucket.list.PushFront(contact)
+		} else {
+			oldest := bucket.list.Back().Value.(Contact)
+			err := bucket.network.SendPingMessage(&oldest)
+			if err != nil { 
+				bucket.list.Remove(bucket.list.Front())
+				bucket.list.PushFront(contact)
+			} 
 		}
 	} else {
 		bucket.list.MoveToFront(element)
