@@ -7,3 +7,7 @@ up:
 
 down:
 	docker compose down
+
+test:
+	go install golang.org/x/tools/cover
+	go test -v ./kademlia -cover
