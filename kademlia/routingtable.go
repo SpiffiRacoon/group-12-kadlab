@@ -2,7 +2,6 @@ package kademlia
 
 import "fmt"
 
-//TODO: update bucketSize
 const bucketSize = 20
 
 // RoutingTable definition
