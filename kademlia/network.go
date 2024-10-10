@@ -189,6 +189,7 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 		Sender:  network.RoutingTable.me,
 	}
 	responseMsg, err := network.sendMessage(msg, contact)
+	print(responseMsg)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
 		return err

@@ -248,7 +248,6 @@ func (kademlia *Kademlia) Store(data []byte) (string, error) {
 	if len(contacts) == 0 {
 		return "", fmt.Errorf("no contacts found")
 	}
-	fmt.Println(contacts)
 	for _, contact := range contacts {
 		fmt.Println("Storing data at: ", location.String(), " on node: ", contact.Address)
 		err := kademlia.Network.SendStoreMessage(data, key, &contact)
