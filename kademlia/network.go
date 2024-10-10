@@ -83,7 +83,7 @@ func (network *Network) sendMessage(msg Message, contact *Contact) ([]byte, erro
 	return response[:byteNum], err
 }
 
-func (network *Network) SendPingMessage(target *Contact) bool {
+func (network *Network) SendPingMessage(target *Contact) error {
 	msg := Message{
 		MsgType: "PING",
 		Content: "PING",
@@ -93,16 +93,16 @@ func (network *Network) SendPingMessage(target *Contact) bool {
 	responseMsg, err := network.sendMessage(msg, target)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", target.ID, "not responding", err.Error())
-		return false
+		return err
 	} else {
 		var msg Message
 		err := json.Unmarshal(responseMsg, &msg)
 		if err != nil {
 			fmt.Println("Error unmarshalling message")
-			return false
+			return err
 		}
 		fmt.Printf("%s %s %s %s %s\n", target.ID, "responding on port:", target.Address, "with ", msg.Content)
-		return true
+		return err
 	}
 }
 

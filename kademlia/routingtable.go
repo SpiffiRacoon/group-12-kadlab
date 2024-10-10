@@ -2,6 +2,7 @@ package kademlia
 
 import "fmt"
 
+//TODO: update bucketSize
 const bucketSize = 20
 
 // RoutingTable definition
@@ -26,7 +27,6 @@ func (routingTable *RoutingTable) AddContact(contact Contact) {
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
 	bucket := routingTable.buckets[bucketIndex]
 	bucket.AddContact(contact)
-	//fmt.Println("Added contact: ", contact)
 }
 
 // FindClosestContacts finds the count closest Contacts to the target in the RoutingTable
@@ -69,6 +69,18 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 	}
 
 	return IDLength*8 - 1
+}
+
+// GenerateIDForBucket generates an ID that falls into the specified bucket index
+func (routingTable *RoutingTable) GenerateIDForBucket(bucketIndex int) *KademliaID {
+	newID := routingTable.me.ID.Copy()
+
+	byteIndex := bucketIndex / 8
+	bitIndex := bucketIndex % 8
+
+	newID[byteIndex] ^= 1 << uint8(7-bitIndex) 
+
+	return newID
 }
 
 func (routingTable *RoutingTable) PrintRoutingTable() {

@@ -44,6 +44,7 @@ func (kademlia *Kademlia) Start() {
 		fmt.Println("Error converting port to int:", err)
 		return
 	}
+
 	err = kademlia.Network.Listen(host, port)
 	if err != nil {
 		panic(err)
@@ -77,20 +78,34 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 func (kademlia *Kademlia) PopulateNetwork() {
 	fmt.Println("Populating the network...")
 
-	// Define the number of random IDs to search for and populate the network with
-	numLookups := 10
+	queriedNodes := []Contact{kademlia.Me}
 
-	for i := 0; i < numLookups; i++ {
-		randomID := NewRandomKademliaID()
-
-		contacts, err := kademlia.LookupContact(randomID)
+	for i := 0; i < IDLength*8; i = 2*i+1 { //Results in 8 iterations
+		id := kademlia.Network.RoutingTable.GenerateIDForBucket(i)
+		contacts, err := kademlia.LookupContact(id)
 		if err != nil {
 			fmt.Println("Error finding contacts during network population")
 			continue
 		}
 
 		for _, contact := range contacts {
+			if containsContact(queriedNodes, contact) {
+				continue
+			}
+
+			queriedNodes = append(queriedNodes, contact)
+
+			err = kademlia.Network.SendPingMessage(&contact)
+			if err != nil {
+				fmt.Println("Error pinging contact, node may be down")
+				continue
+			}
+
 			kademlia.Network.RoutingTable.AddContact(contact)
+			err = kademlia.Network.SendJoinMessage(&contact)
+			if err != nil {
+				fmt.Println("Error sending join message")
+			}
 		}
 	}
 
@@ -98,15 +113,15 @@ func (kademlia *Kademlia) PopulateNetwork() {
 }
 
 func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
-	k := 3     // Number of closest nodes to query (bucket size)
-	alpha := 3 // Degree of parallelism (number of nodes to query in each iteration)
+	k := 3  // Number of closest nodes to query (bucket size)
+	alpha := 3  // Degree of parallelism (number of nodes to query in each iteration)
 	closestNodes := kademlia.Network.RoutingTable.FindClosestContacts(target, k)
 
-	queriedNodes := []Contact{}
+	queriedNodes := []Contact{} 
 	foundCloser := true
 
 	for foundCloser {
-		foundCloser = false
+		foundCloser = false 
 
 		for i := 0; i < len(closestNodes) && i < alpha; i++ {
 			node := closestNodes[i]
@@ -139,6 +154,7 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
 
 	return closestNodes, nil
 }
+
 
 func containsContact(list []Contact, current Contact) bool {
 	for _, i := range list {
