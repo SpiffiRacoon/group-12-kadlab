@@ -40,10 +40,12 @@ func TestBucket(t *testing.T) {
 
 	t.Run("Test FullBucket", func(t *testing.T) {
 
-		for i := 0; i < bucketSize; i++ {
+		for i := 0; i < bucketSize-3; i++ {
 			bucket.AddContact(NewContact(NewRandomKademliaID(), ""))
 		}
 		assert.Equal(t, bucket.Len(), bucketSize)
+
+		assert.Equal(t, bucket.list.Back().Value.(Contact), contact1)
 
 		newContact := NewContact(NewRandomKademliaID(), "")
 		bucket.AddContact(newContact)
