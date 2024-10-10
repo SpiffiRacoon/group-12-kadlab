@@ -11,16 +11,15 @@ func TestHandleMessage(t *testing.T) {
 	// Create a new network
 	sender := NewContact(NewKademliaID("1111111100000000000000000000000000000000"), "localhost:8001")
 	target := NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8002")
-	network := NewNetwork(target)
+	target_node := NewKademlia(target, false)
+	network := NewNetwork(target, target_node)
 
 	// Create a new message
 
 	t.Run("Test PING message", func(t *testing.T) {
 		msg := Message{
 			MsgType: "PING",
-			Sender: sender,
-			Target: target,
-
+			Sender:  sender,
 		}
 		data, _ := json.Marshal(msg)
 		respData, err := network.HandleMessage(data, nil)
@@ -37,8 +36,7 @@ func TestHandleMessage(t *testing.T) {
 		msg := Message{
 			MsgType: "JOIN",
 			Content: sender.ID.String(),
-			Sender: sender,
-			Target: target,
+			Sender:  sender,
 		}
 
 		data, _ := json.Marshal(msg)
@@ -63,8 +61,7 @@ func TestHandleMessage(t *testing.T) {
 		msg := Message{
 			MsgType: "FIND_CONTACT",
 			Content: "1111111100000000000000000000000000000002",
-			Sender: sender,
-			Target: target,
+			Sender:  sender,
 		}
 		data, _ := json.Marshal(msg)
 		respData, err := network.HandleMessage(data, nil)
@@ -80,36 +77,34 @@ func TestHandleMessage(t *testing.T) {
 	t.Run("Test STORE message", func(t *testing.T) {
 		msg := Message{
 			MsgType: "STORE",
-			Content: "Hello World",
-			Sender: sender,
-			Target: target,
+			Content: network.kademlia.MakeKey([]byte("Hello World")) + ";" + "Hello World",
+			Sender:  sender,
 		}
 		data, _ := json.Marshal(msg)
 		respData, err := network.HandleMessage(data, nil)
 		assert.Nil(t, err)
-		assert.Nil(t, respData)
-		//TODO check responseData
+		assert.NotNil(t, respData)
 	})
 
 	t.Run("Test FIND_VALUE message", func(t *testing.T) {
 		msg := Message{
 			MsgType: "FIND_VALUE",
-			Content: "Hello World",
-			Sender: sender,
-			Target: target,
+			Content: network.kademlia.MakeKey([]byte("Hello World")),
+			Sender:  sender,
 		}
 		data, _ := json.Marshal(msg)
 		respData, err := network.HandleMessage(data, nil)
 		assert.Nil(t, err)
-		assert.Nil(t, respData)
-		//TODO check responseData
+		assert.Equal(t, []byte("\"Hello World\""), respData)
+		//TODO, fixa så messageHandlern returnerar utan backslashes(läggs till i samband med marshallingen)
+		//Fixa assert för att kolla antalet kontakter som skickas tillbaka om värdet ej finns i nuvarande nod
+		//Fundera på hur vi vill att kontakter skickas tillbaka, är det vettigt med bytearray eller måste det vara en contact array?
 	})
 
 	t.Run("Test unknown message", func(t *testing.T) {
 		msg := Message{
 			MsgType: "UNKNOWN",
-			Sender: sender,
-			Target: target,
+			Sender:  sender,
 		}
 		data, _ := json.Marshal(msg)
 		respData, err := network.HandleMessage(data, nil)
@@ -117,6 +112,5 @@ func TestHandleMessage(t *testing.T) {
 		assert.Equal(t, "Unknown message type: UNKNOWN", err.Error())
 		assert.Nil(t, respData)
 	})
-
 
 }

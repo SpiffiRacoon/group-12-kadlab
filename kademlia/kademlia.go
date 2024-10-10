@@ -19,11 +19,12 @@ type Kademlia struct {
 }
 
 func NewKademlia(me Contact, isBootstrap bool) *Kademlia {
-	kademlia := &Kademlia{}
+	kademlia := Kademlia{}
 	kademlia.Me = me
-	kademlia.Network = *NewNetwork(me)
+	kademlia.Network = *NewNetwork(me, &kademlia)
 	kademlia.IsBootstrap = isBootstrap
-	return kademlia
+	kademlia.DataStorage = make(map[string][]byte)
+	return &kademlia
 }
 
 func (kademlia *Kademlia) Start() {
@@ -174,45 +175,71 @@ func removeFromList(list []Contact, current Contact) []Contact {
 	return list
 }
 
-func (kademlia *Kademlia) LookupData(hash string) string {
-	data := kademlia.ExtractData(hash)
-	if data != nil {
-		return string(data)
+func (kademlia *Kademlia) LookupData(key string) ([]byte, bool) {
+	k := 3     // Number of closest nodes to query (bucket size)
+	alpha := 3 // Degree of parallelism (number of nodes to query in each iteration)
+	if kademlia.DataStorage[key] != nil {
+		return kademlia.DataStorage[key], true
 	}
-	location := NewKademliaID(hash)
-	contacts := kademlia.Network.RoutingTable.FindClosestContacts(location, 5)
-	for _, contact := range contacts {
-		searches, found := kademlia.Network.SendFindDataMessage(hash, &contact)
-		if found == nil {
-			return string(kademlia.ExtractData(searches)) //Unclear if this is the correct way, want to extract the data stored in node with kademliaID "contact"
+	closestContacts := kademlia.Network.RoutingTable.FindClosestContacts(kademlia.Network.RoutingTable.me.ID, k)
+	var queriedContacts []Contact
+	foundCloser := true
+
+	for foundCloser {
+		foundCloser = false
+		for i := 0; i < len(closestContacts) && i < alpha; i++ {
+			contact := closestContacts[i]
+			//if new node, add it to list of queried nodes
+			if containsContact(queriedContacts, contact) {
+				continue
+			}
+			queriedContacts = append(queriedContacts, contact)
+			value, newContacts := kademlia.Network.SendFindDataMessage(key, &contact)
+			if value != "" {
+				return []byte(value), true
+			}
+			closestContacts = append(closestContacts, newContacts...)
+			sort.Slice(closestContacts, func(i, j int) bool {
+				return closestContacts[i].ID.CalcDistance(kademlia.Network.RoutingTable.me.ID).Less(closestContacts[j].ID.CalcDistance(kademlia.Network.RoutingTable.me.ID))
+			})
+			if len(closestContacts) > k {
+				closestContacts = closestContacts[:k]
+			}
+			foundCloser = true
 		}
 	}
-	return "Did not find the data in the closest contacts" //not sure if this is what we want either
+	//Case: key not found
+	return nil, false
 }
 
-func (kademlia *Kademlia) ExtractData(hash string) (data []byte) {
-	res := kademlia.DataStorage[hash]
-	return res
+func (kademlia *Kademlia) ExtractData(hash string) (data []byte, exists bool) {
+	val, exists := kademlia.DataStorage[hash]
+	return val, exists
 }
 
-func (kademlia *Kademlia) Store(data []byte) {
-	sha1 := sha1.Sum(data) //hashes the data
-	key := hex.EncodeToString(sha1[:])
+func (kademlia *Kademlia) Store(data []byte) (string, error) {
+	key := kademlia.MakeKey(data)
 	location := NewKademliaID(key)
 	contacts, _ := kademlia.LookupContact(location)
-
-	if len(contacts) <= 0 {
-		fmt.Println("Error, no suitable nodes to store the data could be found")
-	} else {
-		//blank because we do not care about the iteration variable
-		//we basically do a for each contact in contacts
-		for _, contact := range contacts {
-			kademlia.Network.SendStoreMessage(data, key, &contact)
-		}
-		fmt.Println(string(data) + " is now stored in the key: " + key)
+	if len(contacts) == 0 {
+		return "", fmt.Errorf("no contacts found")
 	}
+	for _, contact := range contacts {
+		fmt.Println("Storing data at: ", location.String(), " on node: ", contact.Address)
+		err := kademlia.Network.SendStoreMessage(data, key, &contact)
+		if err != nil {
+			return "", err
+		}
+	}
+	return key, nil
 }
 
 func (kademlia *Kademlia) LocalStorage(data []byte, key string) {
 	kademlia.DataStorage[key] = data
+}
+
+func (kademlia *Kademlia) MakeKey(value []byte) string {
+	sha1 := sha1.Sum(value) //hashes the data
+	key := hex.EncodeToString(sha1[:])
+	return key
 }

@@ -8,6 +8,7 @@ import (
 )
 
 type Network struct {
+	kademlia     *Kademlia
 	RoutingTable RoutingTable
 	Me           Contact
 }
@@ -15,11 +16,11 @@ type Message struct {
 	MsgType string
 	Content string
 	Sender  Contact
-	Target  Contact
 }
 
-func NewNetwork(me Contact) *Network {
+func NewNetwork(me Contact, kademlia *Kademlia) *Network {
 	network := &Network{}
+	network.kademlia = kademlia
 	network.Me = me
 	network.RoutingTable = *NewRoutingTable(me)
 	return network
@@ -111,7 +112,6 @@ func (network *Network) SendJoinMessage(contact *Contact) error {
 		Content: network.Me.ID.String(),
 		Sender:  network.Me,
 	}
-
 	responseMsg, err := network.sendMessage(msg, contact)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
@@ -152,15 +152,44 @@ func (network *Network) SendFindContactMessage(contact *Contact, targetID *Kadem
 
 }
 
-func (network *Network) SendStoreMessage(data []byte, key string, contact *Contact) error { //förslag, använd error istället för bools
+func (network *Network) SendFindDataMessage(hash string, contact *Contact) (string, []Contact) {
+	msg := Message{
+		MsgType: "FIND_VALUE",
+		Content: hash,
+		Sender:  network.RoutingTable.me,
+	}
+	response, err := network.sendMessage(msg, contact)
+	if err != nil {
+		fmt.Println("Error during FIND_VALUE SendMessage")
+		return "", nil
+	}
+	var suggestedContacts []Contact
+	var dataResponse string
+	err = json.Unmarshal(response, &dataResponse)
+	if err != nil {
+		//Case: if no data is found it acts like a FIND_NODE-response
+		err2 := json.Unmarshal(response, &suggestedContacts)
+		if err2 != nil {
+			fmt.Println("Error during FIND_VALUE unmarshalling")
+			return "", nil
+		} else {
+			return "", suggestedContacts
+		}
+	} else {
+		//Case: Corresponding value is present, return data
+		return dataResponse, nil
+	}
+}
+
+func (network *Network) SendStoreMessage(data []byte, key string, contact *Contact) error {
 
 	msg := Message{
 		MsgType: "STORE",
 		Content: key + ";" + string(data), //Order here can be reversed if needed but should not matter as long as you know the order
 		Sender:  network.RoutingTable.me,
-		Target:  *contact,
 	}
 	responseMsg, err := network.sendMessage(msg, contact)
+	print(responseMsg)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
 		return err
@@ -168,7 +197,7 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 		var storeResponse Message
 		err := json.Unmarshal(responseMsg, &storeResponse)
 		if err != nil {
-			fmt.Println("Error during unmarshalling")
+			fmt.Println("Error during STORE unmarshalling")
 			return err
 		}
 		if storeResponse.MsgType != "STORED" {
@@ -179,27 +208,3 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 	}
 
 }
-
-func (network *Network) SendFindDataMessage(hash string, contact *Contact) (string, error) {
-	msg := Message{
-		MsgType: "FIND",
-		Content: hash,
-		Sender:  network.RoutingTable.me,
-		Target:  *contact,
-	}
-	response, err := network.sendMessage(msg, contact)
-	if err != nil {
-		return ("Failed to contact target node."), err
-	}
-	var dataResponse string
-	err = json.Unmarshal(response, &dataResponse)
-	if err != nil {
-		return "Error during unmarshalling", err
-	} else if dataResponse == "" {
-		return "data not found", fmt.Errorf("data not found")
-	} else {
-		return dataResponse, nil
-	}
-}
-
-
