@@ -2,8 +2,8 @@
 .PHONY: help
 help:
 	@echo "Available make commands:"
-	@echo "  build         - Build the Docker image Kademlia"
-	@echo "  run           - Build and run Kademlia netowrk"
+	@echo "  build         - Build the Docker image kadlab"
+	@echo "  run           - Build and run Kademlia network"
 	@echo "  clean         - Stop and remove the Docker containers"
 	@echo "  test          - Run all tests and the test coverage"
 
