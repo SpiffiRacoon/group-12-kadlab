@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,8 +8,9 @@ import (
 
 func TestBucket(t *testing.T) {
 	// Create a new bucket
-	//contact0 := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "localhost:8000")
-	bucket := newBucket(nil)
+	contact0 := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "localhost:8000")
+	network := NewNetwork(contact0, nil)
+	bucket := newBucket(network)
 
 	// Create a new contact
 	contact1 := NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8000")
@@ -43,7 +43,11 @@ func TestBucket(t *testing.T) {
 		for i := 0; i < bucketSize; i++ {
 			bucket.AddContact(NewContact(NewRandomKademliaID(), ""))
 		}
-		fmt.Println(bucket.Len())
-		
+		assert.Equal(t, bucket.Len(), bucketSize)
+
+		newContact := NewContact(NewRandomKademliaID(), "")
+		bucket.AddContact(newContact)
+		assert.Equal(t, bucket.Len(), bucketSize)
+		assert.Equal(t, bucket.list.Front().Value.(Contact), newContact)
 	})
 }

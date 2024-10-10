@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"container/list"
+	"fmt"
 )
 
 // bucket definition
@@ -35,6 +36,7 @@ func (bucket *bucket) AddContact(contact Contact) {
 		if bucket.list.Len() < bucketSize {
 			bucket.list.PushFront(contact)
 		} else {
+			fmt.Println("Bucket is full")
 			oldest := bucket.list.Back().Value.(Contact)
 			err := bucket.network.SendPingMessage(&oldest)
 			if err != nil { 

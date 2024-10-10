@@ -224,7 +224,7 @@ func (kademlia *Kademlia) Store(data []byte) (string, error) {
 	location := NewKademliaID(key)
 	contacts, _ := kademlia.LookupContact(location)
 	if len(contacts) == 0 {
-		return "", fmt.Errorf("No contacts found")
+		return "", fmt.Errorf("no contacts found")
 	}
 	for _, contact := range contacts {
 		fmt.Println("Storing data at: ", location.String(), " on node: ", contact.Address)
