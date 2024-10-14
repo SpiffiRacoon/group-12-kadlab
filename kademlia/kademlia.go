@@ -191,7 +191,7 @@ func (kademlia *Kademlia) LookupData(key string) ([]byte, bool) {
 
 	target := NewKademliaID(key)
 
-	closestContacts := kademlia.Network.RoutingTable.FindClosestContacts(kademlia.Network.RoutingTable.me.ID, k)
+	closestContacts := kademlia.Network.RoutingTable.FindClosestContacts(target, k)
 	queriedContacts := []Contact{}
 
 	// We have already checked if we have the key / value
