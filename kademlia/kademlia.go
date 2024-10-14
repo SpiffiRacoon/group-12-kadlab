@@ -80,7 +80,7 @@ func (kademlia *Kademlia) PopulateNetwork() {
 
 	queriedNodes := []Contact{kademlia.Me}
 
-	for i := 0; i < IDLength*8; i = 2*i+1 { //Results in 8 iterations
+	for i := 0; i < IDLength*8; i = 2*i + 1 { //Results in 8 iterations
 		id := kademlia.Network.RoutingTable.GenerateIDForBucket(i)
 		contacts, err := kademlia.LookupContact(id)
 		if err != nil {
@@ -113,15 +113,16 @@ func (kademlia *Kademlia) PopulateNetwork() {
 }
 
 func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
-	k := 3  // Number of closest nodes to query (bucket size)
-	alpha := 3  // Degree of parallelism (number of nodes to query in each iteration)
+	k := 3     // Number of closest nodes to query (bucket size)
+	alpha := 3 // Degree of parallelism (number of nodes to query in each iteration)
 	closestNodes := kademlia.Network.RoutingTable.FindClosestContacts(target, k)
+	fmt.Println(closestNodes)
 
-	queriedNodes := []Contact{} 
+	queriedNodes := []Contact{}
 	foundCloser := true
 
 	for foundCloser {
-		foundCloser = false 
+		foundCloser = false
 
 		for i := 0; i < len(closestNodes) && i < alpha; i++ {
 			node := closestNodes[i]
@@ -138,7 +139,14 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
 				continue
 			}
 
-			closestNodes = append(closestNodes, newNodes...)
+			//Check for duplicates or already observed nodes in newNodes
+			for _, newContact := range newNodes {
+				// if closes nodes does not contain the new node and queried nodes does not contain the new node
+				if !containsContact(closestNodes, newContact) && !containsContact(queriedNodes, newContact) {
+					// append the new node to the closest nodes
+					closestNodes = append(closestNodes, newContact)
+				}
+			}
 
 			sort.Slice(closestNodes, func(i, j int) bool {
 				return closestNodes[i].ID.CalcDistance(target).Less(closestNodes[j].ID.CalcDistance(target))
@@ -154,7 +162,6 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
 
 	return closestNodes, nil
 }
-
 
 func containsContact(list []Contact, current Contact) bool {
 	for _, i := range list {
@@ -181,14 +188,22 @@ func (kademlia *Kademlia) LookupData(key string) ([]byte, bool) {
 	if kademlia.DataStorage[key] != nil {
 		return kademlia.DataStorage[key], true
 	}
+
+	target := NewKademliaID(key)
+
 	closestContacts := kademlia.Network.RoutingTable.FindClosestContacts(kademlia.Network.RoutingTable.me.ID, k)
-	var queriedContacts []Contact
+	queriedContacts := []Contact{}
+
+	// We have already checked if we have the key / value
+	queriedContacts = append(queriedContacts, kademlia.Me)
+
 	foundCloser := true
 
 	for foundCloser {
 		foundCloser = false
 		for i := 0; i < len(closestContacts) && i < alpha; i++ {
 			contact := closestContacts[i]
+			fmt.Println("Checking if ", contact, " has the key")
 			//if new node, add it to list of queried nodes
 			if containsContact(queriedContacts, contact) {
 				continue
@@ -198,9 +213,18 @@ func (kademlia *Kademlia) LookupData(key string) ([]byte, bool) {
 			if value != "" {
 				return []byte(value), true
 			}
-			closestContacts = append(closestContacts, newContacts...)
+
+			//Check for duplicates or already observed nodes in newNodes
+			for _, newContact := range newContacts {
+				// if closes nodes does not contain the new node and queried nodes does not contain the new node
+				if !containsContact(closestContacts, newContact) && !containsContact(queriedContacts, newContact) {
+					// append the new node to the closest nodes
+					closestContacts = append(closestContacts, newContact)
+				}
+			}
+
 			sort.Slice(closestContacts, func(i, j int) bool {
-				return closestContacts[i].ID.CalcDistance(kademlia.Network.RoutingTable.me.ID).Less(closestContacts[j].ID.CalcDistance(kademlia.Network.RoutingTable.me.ID))
+				return closestContacts[i].ID.CalcDistance(target).Less(closestContacts[j].ID.CalcDistance(target))
 			})
 			if len(closestContacts) > k {
 				closestContacts = closestContacts[:k]
@@ -224,6 +248,7 @@ func (kademlia *Kademlia) Store(data []byte) (string, error) {
 	if len(contacts) == 0 {
 		return "", fmt.Errorf("no contacts found")
 	}
+	fmt.Println(contacts)
 	for _, contact := range contacts {
 		fmt.Println("Storing data at: ", location.String(), " on node: ", contact.Address)
 		err := kademlia.Network.SendStoreMessage(data, key, &contact)

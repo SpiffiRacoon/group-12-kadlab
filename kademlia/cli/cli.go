@@ -13,6 +13,7 @@ func Kcli(input string, node *kademlia.Kademlia) {
 
 	if len(commandNdata) == 0 {
 		fmt.Println("No command given.")
+		fmt.Print("kCLI@", node.Me.ID, " % ")
 	} else {
 		command := commandNdata[0]
 		switch command {
@@ -30,14 +31,23 @@ func Kcli(input string, node *kademlia.Kademlia) {
 			}
 		case "put":
 			if len(commandNdata) == 2 {
-				node.Store([]byte(commandNdata[1]))
+				response, err := node.Store([]byte(commandNdata[1]))
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					fmt.Println(response)
+				}
 			} else {
 				fmt.Println("This command needs one additional argument")
 			}
 		case "get":
 			if len(commandNdata) == 2 {
-				recvData, _ := node.LookupData(commandNdata[1])
-				print(string(recvData))
+				recvData, found := node.LookupData(node.MakeKey([]byte(commandNdata[1])))
+				if found {
+					fmt.Println("Data recived:", string(recvData))
+				} else {
+					fmt.Println("Failed to fetch data")
+				}
 			} else {
 				fmt.Println("This comman needs one additional arguments")
 			}

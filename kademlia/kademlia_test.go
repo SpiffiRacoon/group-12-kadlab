@@ -46,7 +46,7 @@ func TestKademlia(t *testing.T) {
 	t.Run("Test LookupData", func(t *testing.T) {
 
 		dataRes, exists := node.LookupData(node.MakeKey([]byte("TestingTesting")))
-		assert.NotNil(t, dataRes)
+		assert.Equal(t, "TestingTesting", string(dataRes))
 		assert.True(t, exists)
 		fmt.Println(string(dataRes))
 		anotherDataRes, exists := node.LookupData(node.MakeKey([]byte("SkaInteFinnas")))

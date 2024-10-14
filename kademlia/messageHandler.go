@@ -110,7 +110,7 @@ func (network *Network) handleFindDataMessage(key string) ([]byte, error) {
 		return res, err
 
 	} else {
-		suggestedContacts := network.RoutingTable.FindClosestContacts(network.RoutingTable.me.ID, 5)
+		suggestedContacts := network.RoutingTable.FindClosestContacts(network.RoutingTable.me.ID, 3)
 		res, err := json.Marshal(suggestedContacts)
 		return res, err
 	}
