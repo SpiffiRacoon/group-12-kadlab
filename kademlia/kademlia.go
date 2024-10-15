@@ -55,11 +55,17 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 	fmt.Println("Joining network...")
 	time.Sleep(2 * time.Second)
 
+	err := kademlia.Network.SendPingMessage(knownNode)
+	if err != nil {
+		fmt.Println("Error pinging known node, no known node to join network with, error: ", err)
+		return
+	}
+
 	kademlia.Network.RoutingTable.AddContact(*knownNode)
-	kademlia.Network.SendJoinMessage(knownNode)
+	//kademlia.Network.SendJoinMessage(knownNode)
 	contacts, err := kademlia.LookupContact(kademlia.Me.ID)
 	if err != nil {
-		fmt.Println("Error finding contacts")
+		fmt.Println("Error finding contacts, err: ", err)
 		return
 	}
 
@@ -84,7 +90,7 @@ func (kademlia *Kademlia) PopulateNetwork() {
 		id := kademlia.Network.RoutingTable.GenerateIDForBucket(i)
 		contacts, err := kademlia.LookupContact(id)
 		if err != nil {
-			fmt.Println("Error finding contacts during network population")
+			fmt.Println("Error finding contacts during network population, err: ", err)
 			continue
 		}
 
@@ -97,7 +103,7 @@ func (kademlia *Kademlia) PopulateNetwork() {
 
 			err = kademlia.Network.SendPingMessage(&contact)
 			if err != nil {
-				fmt.Println("Error pinging contact, node may be down")
+				fmt.Println("Error pinging contact, err: ", err)
 				continue
 			}
 
@@ -162,6 +168,7 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
 
 	return closestNodes, nil
 }
+
 
 func containsContact(list []Contact, current Contact) bool {
 	for _, i := range list {
@@ -248,7 +255,6 @@ func (kademlia *Kademlia) Store(data []byte) (string, error) {
 	if len(contacts) == 0 {
 		return "", fmt.Errorf("no contacts found")
 	}
-	fmt.Println(contacts)
 	for _, contact := range contacts {
 		fmt.Println("Storing data at: ", location.String(), " on node: ", contact.Address)
 		err := kademlia.Network.SendStoreMessage(data, key, &contact)
