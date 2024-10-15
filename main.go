@@ -1,5 +1,3 @@
-// TODO: Add package documentation for `main`, like this:
-// Package main something something...
 package main
 
 import (
