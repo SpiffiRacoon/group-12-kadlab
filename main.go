@@ -44,7 +44,7 @@ func main() {
 		}
 		bootstrapIP = bootstrap_NET_IP[0].String()
 	}
-	
+
 	contact := kademlia.NewContact(kademlia.NewRandomKademliaID(), localIP+":"+NodePort)
 	fmt.Println("Me: " + contact.String())
 	fmt.Println("BootstrapIP: " + bootstrapIP) // TODO: remove
@@ -57,12 +57,11 @@ func main() {
 	}
 
 	bootsrapNode := kademlia.NewContact(
-		kademlia.NewKademliaID("B0075712A9000000000000000000000000000000"), 
+		kademlia.NewKademliaID("B0075712A9000000000000000000000000000000"),
 		bootstrapIP+":3000")
 
 	node.BootstrapNode = bootsrapNode
 	go node.Start()
-
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		scanner.Scan()

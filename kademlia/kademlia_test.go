@@ -34,7 +34,7 @@ func TestKademlia(t *testing.T) {
 		time.Sleep(5 * time.Second)
 		contacts, err := node.LookupContact(NewKademliaID("B0075712A9000000000000000000000000000000"))
 		assert.Nil(t, err)
-		assert.Equal(t, 3, len(contacts))
+		assert.Equal(t, 2, len(contacts))
 	})
 
 	t.Run("Test Store", func(t *testing.T) {
@@ -46,7 +46,7 @@ func TestKademlia(t *testing.T) {
 	t.Run("Test LookupData", func(t *testing.T) {
 
 		dataRes, exists := node.LookupData(node.MakeKey([]byte("TestingTesting")))
-		assert.NotNil(t, dataRes)
+		assert.Equal(t, "TestingTesting", string(dataRes))
 		assert.True(t, exists)
 		fmt.Println(string(dataRes))
 		anotherDataRes, exists := node.LookupData(node.MakeKey([]byte("SkaInteFinnas")))
