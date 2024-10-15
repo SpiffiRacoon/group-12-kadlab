@@ -61,7 +61,7 @@ To run any of the above commands, simply type `<command>` in the attached termin
 
 ## Testing
 
-Running the command `make test` will run all tests and show the test coverage. The code coverage is calculated using the tool `go test -cover`. This repository has a code testing coverage of 85.8% <!-- TODO: update test coverage -->
+Running the command `make test` will run all tests and show the test coverage. The code coverage is calculated using the tool `go test -cover`. This repository has a code testing coverage of 83.9%
 
 ## License
 
