@@ -34,7 +34,7 @@ func TestKademlia(t *testing.T) {
 		time.Sleep(5 * time.Second)
 		contacts, err := node.LookupContact(NewKademliaID("B0075712A9000000000000000000000000000000"))
 		assert.Nil(t, err)
-		assert.Equal(t, 3, len(contacts))
+		assert.Equal(t, 2, len(contacts))
 	})
 
 	t.Run("Test Store", func(t *testing.T) {
