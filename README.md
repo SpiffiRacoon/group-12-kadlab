@@ -57,7 +57,7 @@ This will attach said terminal to the specified terminal. The existing cli comma
 | `exit` | Shut down the node |
 | `help` | Print available CLI commands |
 
-To run any of the above commands, simply type `<command>` in the terminal.
+To run any of the above commands, simply type `<command>` in the attached terminal.
 
 ## Testing
 
