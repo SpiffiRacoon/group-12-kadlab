@@ -122,7 +122,6 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
 	k := 3     // Number of closest nodes to query (bucket size)
 	alpha := 3 // Degree of parallelism (number of nodes to query in each iteration)
 	closestNodes := kademlia.Network.RoutingTable.FindClosestContacts(target, k)
-	fmt.Println(closestNodes)
 
 	queriedNodes := []Contact{}
 	foundCloser := true
