@@ -37,6 +37,7 @@ func Kcli(input string, node *kademlia.Kademlia) {
 			fmt.Println("+-----------------+--------------------------------------------------+")
 			fmt.Println("| Command         | Description                                      |")
 			fmt.Println("+-----------------+--------------------------------------------------+")
+			fmt.Println("| ping <id>       | Ping node with given ID.                         |")
 			fmt.Println("| put <value>     | Store the given value.                           |")
 			fmt.Println("| get <value>     | Retrieve the stored value.                       |")
 			fmt.Println("| print           | Print the routing table and the number of nodes. |")

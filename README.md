@@ -51,6 +51,7 @@ docker attach <container-name>
 This will attach said terminal to the specified terminal. The existing cli commands are.
 | Command | Description |
 |----------------|-------------------------------------------------------|
+| `ping <id>` | Ping node with given ID |
 | `put <value>` | Store the given value |
 | `get <value>` | Retrieve the stored value |
 | `print` | Print the routing table and the number of nodes |
