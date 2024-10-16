@@ -24,7 +24,7 @@ clean:
 	docker compose down
 
 .PHONY: test
-test: build
+test:
 	@echo "Running tests and test coverage..."
 	go install golang.org/x/tools/cover
 	go test -v ./kademlia -cover
