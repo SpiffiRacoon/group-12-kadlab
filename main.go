@@ -1,5 +1,3 @@
-// TODO: Add package documentation for `main`, like this:
-// Package main something something...
 package main
 
 import (
@@ -47,7 +45,6 @@ func main() {
 
 	contact := kademlia.NewContact(kademlia.NewRandomKademliaID(), localIP+":"+NodePort)
 	fmt.Println("Me: " + contact.String())
-	fmt.Println("BootstrapIP: " + bootstrapIP) // TODO: remove
 
 	node := kademlia.NewKademlia(contact, IS_BOOTSTRAP)
 
@@ -70,7 +67,7 @@ func main() {
 			os.Exit(1)
 		}
 		input := scanner.Text()
-		cli.Kcli(input, node) // Replace with cli function call.
+		cli.Kcli(input, node)
 	}
 
 }

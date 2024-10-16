@@ -44,7 +44,6 @@ func TestHandleMessage(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, respData)
 
-		//TODO:  checks that the sender has been added to the routing table
 		var respMsg Message
 		err = json.Unmarshal(respData, &respMsg)
 		assert.Nil(t, err)
@@ -96,9 +95,6 @@ func TestHandleMessage(t *testing.T) {
 		respData, err := network.HandleMessage(data, nil)
 		assert.Nil(t, err)
 		assert.Equal(t, []byte("\"Hello World\""), respData)
-		//TODO, fixa så messageHandlern returnerar utan backslashes(läggs till i samband med marshallingen)
-		//Fixa assert för att kolla antalet kontakter som skickas tillbaka om värdet ej finns i nuvarande nod
-		//Fundera på hur vi vill att kontakter skickas tillbaka, är det vettigt med bytearray eller måste det vara en contact array?
 	})
 
 	t.Run("Test unknown message", func(t *testing.T) {

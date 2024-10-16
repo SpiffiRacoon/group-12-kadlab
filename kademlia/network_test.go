@@ -61,7 +61,6 @@ func TestNetwork(t *testing.T) {
 		assert.NotContains(t, contacts, contact3)
 	})
 
-	//TODO: Implement this test
 	t.Run("Test SendStoreMessage", func(t *testing.T) {
 		//Result: data is stored in contact2's routing table
 		key := node1.MakeKey([]byte("data"))
