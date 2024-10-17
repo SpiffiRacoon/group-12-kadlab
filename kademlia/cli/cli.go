@@ -42,7 +42,7 @@ func Kcli(input string, node *kademlia.Kademlia) {
 			}
 		case "get":
 			if len(commandNdata) == 2 {
-				recvData, found := node.LookupData(node.MakeKey([]byte(commandNdata[1])))
+				recvData, found := node.LookupData(commandNdata[1])
 				if found {
 					fmt.Println("Data recived:", string(recvData))
 				} else {

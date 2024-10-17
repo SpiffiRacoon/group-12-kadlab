@@ -10,7 +10,7 @@ help:
 .PHONY: build
 build:
 	@echo "Building Kademlia image..."
-	docker rmi "kadlab"
+	-docker rmi "kadlab"
 	docker build -t kadlab .
 
 .PHONY: run

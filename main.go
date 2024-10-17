@@ -53,11 +53,11 @@ func main() {
 		go http.ListenAndServe("127.0.0.1:80", nil)
 	}
 
-	bootsrapNode := kademlia.NewContact(
+	bootstrapNode := kademlia.NewContact(
 		kademlia.NewKademliaID("B0075712A9000000000000000000000000000000"),
 		bootstrapIP+":3000")
 
-	node.BootstrapNode = bootsrapNode
+	node.BootstrapNode = bootstrapNode
 	go node.Start()
 	scanner := bufio.NewScanner(os.Stdin)
 	for {

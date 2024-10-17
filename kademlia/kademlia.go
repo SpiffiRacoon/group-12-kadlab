@@ -62,7 +62,6 @@ func (kademlia *Kademlia) JoinNetwork(knownNode *Contact) {
 	}
 
 	kademlia.Network.RoutingTable.AddContact(*knownNode)
-	//kademlia.Network.SendJoinMessage(knownNode)
 	contacts, err := kademlia.LookupContact(kademlia.Me.ID)
 	if err != nil {
 		fmt.Println("Error finding contacts, err: ", err)
@@ -108,10 +107,10 @@ func (kademlia *Kademlia) PopulateNetwork() {
 			}
 
 			kademlia.Network.RoutingTable.AddContact(contact)
-			err = kademlia.Network.SendJoinMessage(&contact)
-			if err != nil {
-				fmt.Println("Error sending join message")
-			}
+			//err = kademlia.Network.SendJoinMessage(&contact)
+			//if err != nil {
+			//	fmt.Println("Error sending join message")
+			//}
 		}
 	}
 
@@ -167,7 +166,6 @@ func (kademlia *Kademlia) LookupContact(target *KademliaID) ([]Contact, error) {
 
 	return closestNodes, nil
 }
-
 
 func containsContact(list []Contact, current Contact) bool {
 	for _, i := range list {

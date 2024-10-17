@@ -7,7 +7,7 @@ import (
 // bucket definition
 // contains a List
 type bucket struct {
-	list *list.List
+	list    *list.List
 	network *Network
 }
 
@@ -37,17 +37,17 @@ func (bucket *bucket) AddContact(contact Contact) {
 		} else {
 			oldest := bucket.list.Back().Value.(Contact)
 			err := bucket.network.SendPingMessage(&oldest)
-			if err != nil { 
-				bucket.list.Remove(bucket.list.Front())
+			if err != nil {
+				bucket.list.Remove(bucket.list.Back())
 				bucket.list.PushFront(contact)
-			} 
+			}
 		}
 	} else {
 		bucket.list.MoveToFront(element)
 	}
 }
 
-// GetContactAndCalcDistance returns an array of Contacts where 
+// GetContactAndCalcDistance returns an array of Contacts where
 // the distance has already been calculated
 func (bucket *bucket) GetContactAndCalcDistance(target *KademliaID) []Contact {
 	var contacts []Contact

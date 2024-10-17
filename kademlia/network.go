@@ -185,11 +185,10 @@ func (network *Network) SendStoreMessage(data []byte, key string, contact *Conta
 
 	msg := Message{
 		MsgType: "STORE",
-		Content: key + ";" + string(data), //Order here can be reversed if needed but should not matter as long as you know the order
+		Content: key + ";" + string(data),
 		Sender:  network.RoutingTable.me,
 	}
 	responseMsg, err := network.sendMessage(msg, contact)
-	print(responseMsg)
 	if err != nil {
 		fmt.Printf("%s %s %s\n", contact.ID, "not responding", err.Error())
 		return err
